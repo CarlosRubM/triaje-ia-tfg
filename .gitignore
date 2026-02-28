@@ -1,0 +1,33 @@
+﻿# Entornos virtuales
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Datos sensibles (NUNCA subir a GitHub)
+data/raw/
+data/interim/
+data/processed/
+*.csv
+*.parquet
+*.feather
+
+# Modelos serializados grandes
+models/*.pkl
+models/*.json
+
+# Variables de entorno
+.env
+*.env
+
+# IDEs
+.vscode/settings.json
+.idea/
+*.DS_Store
+
+# Notebooks con outputs
+notebooks/*.ipynb
+
+# Logs
+*.log
+logs/
