@@ -1,0 +1,38 @@
+﻿# Contexto del Proyecto
+Este es un TFG de Ingeniería Informática que implementa un sistema híbrido de IA
+para triaje médico de urgencias. Arquitectura de dos fases:
+- Fase 1: LLM local (Ollama + llama3.2) extrae vector clínico estructurado desde texto libre
+- Fase 2: XGBoost clasificador predictivo entrenado sobre MIMIC-IV-ED
+
+# Stack Tecnológico
+- Python 3.11+ con src layout gestionado por uv
+- Ollama para inferencia LLM local (privacidad total de datos del paciente)
+- Pydantic v2 para validación estricta del JSON extraído por el LLM
+- Scikit-Learn Pipeline + ColumnTransformer para preprocesamiento
+- XGBoost como clasificador principal
+- SHAP para explicabilidad
+- Streamlit para el frontend clínico
+
+# Reglas de Código
+- Usar loguru en lugar de print() para todos los logs
+- Todas las funciones deben tener type hints completos
+- Las clases Pydantic usan Field() con description para documentar cada campo
+- El parámetro temperature del LLM SIEMPRE debe ser 0.0 (determinismo)
+- Nunca usar datos del conjunto de validación durante el preprocesamiento (data leakage)
+- Los modelos serializados van en /models/, nunca en /src/
+
+# Dataset Principal
+MIMIC-IV-ED de PhysioNet. Tablas clave: edstays, triage, diagnosis.
+La columna objetivo es icd_code filtrada por seq_num=1 (diagnóstico principal).
+Los códigos ICD-10 se agrupan usando CCS (Clinical Classifications Software) de AHRQ.
+
+# Convenciones de Nombres
+- Archivos de módulo: snake_case
+- Clases: PascalCase  
+- Variables clínicas: nombres descriptivos en español
+- Constantes: MAYUSCULAS_CON_GUION
+
+# Lo que NO hacer
+- No usar APIs externas de LLM (OpenAI, Anthropic directamente en el código del paciente)
+- No subir datos a GitHub (data/ está en .gitignore)
+- No usar notebooks como código de producción, solo para EDA
