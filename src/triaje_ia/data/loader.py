@@ -49,40 +49,6 @@ DATA_INTERIM = PROJECT_ROOT / "data" / "interim"
 TABLAS_ED    = ["edstays", "triage", "medrecon"]
 TABLA_PATIENTS = DATA_RAW / "patients.csv.gz"
 
-# Clases farmacológicas más relevantes para flags binarios
-GRUPOS_FARMA: dict[str, str] = {
-    "med_estatina":          "HMG CoA Reductase Inhibitors",
-    "med_antiagregante":     "Platelet Aggregation Inhibitors|Salicylate Analgesics",
-    "med_anticoagulante":    "Anticoagulant|Direct Factor Xa Inhibitors|Low Molecular Weight Heparins",
-    "med_betabloqueante":    "Beta Blockers",
-    "med_ieca_ara2":         "ACE Inhibitors|Angiotensin II Receptor Blockers",
-    "med_calcioantagonista": "Calcium Channel Blockers",
-    "med_nitrato":           "Coronary Vasodilators",
-    "med_alfa_bloqueante":   "Alpha-1 Receptor Blockers|alpha-1-Adrenoceptor Antagonists",
-    "med_broncodilatador":   "Asthma/COPD Therapy|Asthma Therapy",
-    "med_corticoide_inhal":  "Inhaled Corticosteroids",
-    "med_insulina":          "Insulin Analogs",
-    "med_antidiabetico_oral":"Biguanides|Sulfonylurea Derivatives",
-    "med_tiroides":          "Thyroid Hormones",
-    "med_benzodiacepina":    "Benzodiazepines",
-    "med_opioide":           "Opioid",
-    "med_antidepresivo":     "Reuptake Inhibitors|Alpha-2 Receptor Antagonists|Tricyclics",
-    "med_anticonvulsivo":    "Anticonvulsant",
-    "med_antipsicotico":     "Antipsychotic|Bipolar Therapy Agents",
-    "med_estimulante_snc":   "Attention Deficit-Hyperactivity|CNS Stimulant",
-    "med_sedante_hipnotico": "Sedative-Hypnotic|Hypnotics",
-    "med_aine":              "NSAID Analgesics",
-    "med_analgesico_suave":  "Analgesic or Antipyretic Non-Opioid",
-    "med_corticoide_sist":   r"(?<!Dermatological - )(?<!Inhaled )Glucocorticoids",
-    "med_inmunosupresor":    "Immunosuppressive",
-    "med_diuretico":         "Diuretic|Aldosterone Receptor Antagonists",
-    "med_antiacido":         "Proton Pump Inhibitors|Histamine H2-Receptor Antagonists",
-    "med_laxante":           "Laxative",
-    "med_antiemetico":       "Antiemetic",
-    "med_antihistaminico":   "Antihistamines",
-    "med_antibiotico":       "Fluoroquinolone Antibiotics|Antibacterial",
-}
-
 # Valores de disposition que se codifican como ingreso (1)
 DISPOSICION_INGRESO: frozenset[str] = frozenset({"ADMITTED", "TRANSFER", "ADMIT"})
 
@@ -188,49 +154,20 @@ def _calcular_edad(
 
 # ── Agregación de medicación previa ──────────────────────────────────────────
 def _agregar_medrecon(df_medrecon: pd.DataFrame) -> pd.DataFrame:
-    """
-    Agrega medrecon (medicación en casa, previa al ingreso) a una fila
-    por stay_id.
-
-    Produce:
-    - n_medicamentos: número de fármacos registrados
-    - med_*:           flags binarios por clase farmacológica
-    - medicacion_raw: string concatenado de nombres de medicamentos
-    """
-    # Eliminar filas duplicadas exactas antes de agregar
+    """Agrega medrecon a una fila por stay_id. NO genera flags med_* (→ features.py)."""
     df_medrecon = df_medrecon.drop_duplicates(subset=["stay_id", "name"])
-    # Un único groupby 
     agg = (
         df_medrecon.groupby("stay_id")
         .agg(
             n_medicamentos=("name", "size"),
-            _desc=(
-                "etcdescription",
-                lambda x: " | ".join(x.dropna().astype(str)).lower(),
-            ),
             medicacion_raw=(
-                "name",
+                "etcdescription",
                 lambda x: ", ".join(x.dropna().astype(str).str.lower()),
             ),
         )
         .reset_index()
     )
-
-
-    # regex=True es imprescindible; los patrones usan | como OR lógico.
-    for col, keyword in GRUPOS_FARMA.items():
-        agg[col] = (
-            agg["_desc"]
-            .str.contains(keyword.lower(), regex=True, na=False)
-            .astype("int8")
-        )
-
-    agg = agg.drop(columns=["_desc"])
-
-    logger.info(
-        f"medrecon agregado: {len(agg):,} stays | "
-        f"{len(GRUPOS_FARMA)} flags farmacológicos"
-    )
+    logger.info(f"medrecon agregado: {len(agg):,} stays | columnas: n_medicamentos, medicacion_raw")
     return agg
 
 
@@ -369,9 +306,6 @@ def construir_dataset_base(dfs: dict[str, pd.DataFrame]) -> pd.DataFrame:
         )
 
     # 6. Reducción de tipos de datos: los NaN del LEFT JOIN son ausencia real → 0
-    med_cols = [c for c in df.columns if c.startswith("med_")]
-    if med_cols:
-        df[med_cols] = df[med_cols].fillna(0).astype("int8")
     df["n_medicamentos"] = df["n_medicamentos"].fillna(0).astype("int16")
     df["medicacion_raw"] = df["medicacion_raw"].fillna("")
 
