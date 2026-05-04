@@ -67,17 +67,11 @@ Notas de implementación:
   - Bloque 6 vectorizado con isin() + cummax() — O(n log n), ~1.3s sobre 425K filas
 """
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 from loguru import logger
 
-
-# ── Rutas ─────────────────────────────────────────────────────────────────────
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DATA_INTERIM = PROJECT_ROOT / "data" / "interim"
-DATA_RAW     = PROJECT_ROOT / "data" / "raw"
+from triaje_ia.config import DATA_INTERIM, DATA_RAW, DATA_PROCESSED
 
 # ── Constantes clínicas ───────────────────────────────────────────────────────
 
@@ -813,7 +807,6 @@ def cargar_features(forzar: bool = False) -> pd.DataFrame:
     from triaje_ia.data.loader  import cargar_dataset_base
     from triaje_ia.data.cleaner import limpiar_dataset
 
-    DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     cache = DATA_PROCESSED / "dataset_features.parquet"
 

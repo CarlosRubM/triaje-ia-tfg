@@ -34,18 +34,13 @@ Arquitectura del problema:
 
 """
 
-from pathlib import Path
-
 import pandas as pd
 from loguru import logger
 
+from triaje_ia.config import DATA_RAW, DATA_INTERIM
 
-# ── Rutas ─────────────────────────────────────────────────────────────────────
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-DATA_RAW     = PROJECT_ROOT / "data" / "raw"
-DATA_INTERIM = PROJECT_ROOT / "data" / "interim"
-
+# ── Constantes ────────────────────────────────────────────────────────────────
 TABLAS_ED    = ["edstays", "triage", "medrecon"]
 TABLA_PATIENTS = DATA_RAW / "patients.csv.gz"
 

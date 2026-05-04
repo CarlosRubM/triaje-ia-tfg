@@ -17,12 +17,11 @@ NO responsabilidades (van en el Pipeline de sklearn):
   - Encoding de categóricas
 """
 
-from pathlib import Path
-import re
-
 import numpy as np
 import pandas as pd
 from loguru import logger
+
+from triaje_ia.config import DATA_INTERIM
 
 
 # ── Rangos fisiológicos aceptables ────────────────────────────────────────────
@@ -190,9 +189,8 @@ def limpiar_dataset(df: pd.DataFrame) -> pd.DataFrame:
 def cargar_dataset_limpio(forzar: bool = False) -> pd.DataFrame:
     from triaje_ia.data.loader import cargar_dataset_base
 
-    data_interim = Path(__file__).resolve().parents[3] / "data" / "interim"
-    data_interim.mkdir(parents=True, exist_ok=True)
-    cache = data_interim / "dataset_clean.parquet"
+    DATA_INTERIM.mkdir(parents=True, exist_ok=True)
+    cache = DATA_INTERIM / "dataset_clean.parquet"
 
     if cache.exists() and not forzar:
         logger.warning(
