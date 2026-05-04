@@ -14,8 +14,9 @@ data/processed/
 
 # Modelos serializados grandes
 models/*.pkl
-models/*.json
 models/*.joblib
+models/*.json
+!models/mejores_parametros_lightgbm.json
 
 # Variables de entorno
 .env
@@ -45,3 +46,4 @@ catboost_info/
 
 # Planes internos de Cursor (contexto de trabajo local)
 .cursor/plans/
+.cursor/CHECKLIST_CODIGO.md
