@@ -15,6 +15,7 @@ data/processed/
 # Modelos serializados grandes
 models/*.pkl
 models/*.json
+models/*.joblib
 
 # Variables de entorno
 .env
@@ -25,7 +26,22 @@ models/*.json
 .idea/
 *.DS_Store
 
-
 # Logs
 *.log
 logs/
+
+# Guias locales de trabajo con IA (no publicar)
+GUIA_CONTEXTO_IA.md
+GUIA_DEFINITIVA_MEJORAS.md
+GUIA_*.md
+
+# Artefactos generados en notebooks (regenerables)
+notebooks/**/*.png
+notebooks/**/*.pkl
+notebooks/**/*.json
+notebooks/catboost_info/
+notebooks/.ipynb_checkpoints/
+catboost_info/
+
+# Planes internos de Cursor (contexto de trabajo local)
+.cursor/plans/

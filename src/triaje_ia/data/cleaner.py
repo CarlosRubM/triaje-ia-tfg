@@ -147,8 +147,8 @@ def limpiar_dataset(df: pd.DataFrame) -> pd.DataFrame:
     # 1. Eliminar columnas no útiles
     cols_eliminar = [
         "hadm_id",        # ID administrativo, no es feature
-        "outtime",        # no disponible en minuto 0
         "disposition",    # sustituida por label_disposition
+        # outtime: se conserva porque lo necesitamos para despues
     ]
     df = df.drop(columns=[c for c in cols_eliminar if c in df.columns])
     logger.info(f"Columnas eliminadas: {cols_eliminar}")
