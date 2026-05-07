@@ -12,9 +12,7 @@ from loguru import logger
 from triaje_ia.config import MODELS_DIR
 from triaje_ia.data.features import TODAS_FEATURES
 
-NOMBRE_MODELO_DEFAULT = "lgbm_ganador"
-
-_GENDER_MAP = {"M": 0, "F": 1}
+NOMBRE_MODELO_DEFAULT = "lgbm_ordinal"
 
 
 def cargar_modelo(nombre: str = NOMBRE_MODELO_DEFAULT):
@@ -44,20 +42,17 @@ def predecir_proba(modelo, X: pd.DataFrame) -> np.ndarray:
     """
     Predice probabilidades por clase de acuity sobre un DataFrame de features.
 
-    Aplica el encoding de gender (M->0, F->1) antes de la inferencia.
-    El modelo espera las columnas en el orden exacto de TODAS_FEATURES.
+    El modelo OrdinalFrankHall incluye el pipeline de preprocesamiento
+    (ColumnTransformer con OrdinalEncoder para gender), por lo que
+    NO se debe hacer encoding manual aquí.
 
     Args:
-        modelo: modelo cargado con cargar_modelo().
+        modelo: modelo cargado con cargar_modelo() (OrdinalFrankHall con pipeline).
         X: DataFrame con al menos las columnas de TODAS_FEATURES.
 
     Returns:
         np.ndarray shape (n_filas, 5) con P(acuity=1..5) por fila.
     """
     X_inf = X[TODAS_FEATURES].copy()
-
-    if "gender" in X_inf.columns:
-        X_inf["gender"] = X_inf["gender"].map(_GENDER_MAP).fillna(0).astype("int8")
-
     probas = modelo.predict_proba(X_inf)
     return probas

@@ -25,6 +25,8 @@ dependencies = [
     # Configuracion runtime
     "python-dotenv>=1.0.0",
     "loguru>=0.7.0",
+    # HTTP client para API cloud (Groq/OpenAI)
+    "httpx>=0.27",
 ]
 
 [dependency-groups]

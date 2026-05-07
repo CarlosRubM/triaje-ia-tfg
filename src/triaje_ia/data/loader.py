@@ -16,7 +16,7 @@ Arquitectura del problema:
     Vitales iniciales: temperature, heartrate, resprate, o2sat, sbp, dbp, pain
     Motivo consulta:   chiefcomplaint
     Medicación previa: n_medicamentos + flags binarios desde medrecon.etcdescription
-    Diagnóstico principal: ccs_category (ICD-9+10 unificado) (AUNQUE LUEGO SE USE DE FORMA DISTINTA EN FEATURES)
+    Diagnóstico principal: ccs_category (ICD-9+10 unificado, refinado en features.py)
 
   DESCARTADAS EXPLÍCITAMENTE:
     vitalsign → mediciones durante la estancia, no disponibles en minuto 0
@@ -40,7 +40,7 @@ from loguru import logger
 from triaje_ia.config import DATA_RAW, DATA_INTERIM
 
 
-# ── Constantes ────────────────────────────────────────────────────────────────
+# Constantes
 TABLAS_ED    = ["edstays", "triage", "medrecon"]
 TABLA_PATIENTS = DATA_RAW / "patients.csv.gz"
 
@@ -48,7 +48,7 @@ TABLA_PATIENTS = DATA_RAW / "patients.csv.gz"
 DISPOSICION_INGRESO: frozenset[str] = frozenset({"ADMITTED", "TRANSFER", "ADMIT"})
 
 
-# ── Carga de tablas raw ───────────────────────────────────────────────────────
+# Carga de tablas raw
 
 def cargar_tablas_raw() -> dict[str, pd.DataFrame]:
     """
@@ -59,7 +59,7 @@ def cargar_tablas_raw() -> dict[str, pd.DataFrame]:
     """
     dfs: dict[str, pd.DataFrame] = {}
 
-    #tablas de MIMIC-IV-ED
+    # Tablas de MIMIC-IV-ED
     for tabla in TABLAS_ED:
         ruta = DATA_RAW / f"{tabla}.csv.gz"
         if not ruta.exists():
@@ -105,7 +105,7 @@ def cargar_tablas_raw() -> dict[str, pd.DataFrame]:
     return dfs
 
 
-# ── Cálculo de edad ───────────────────────────────────────────────────────────
+# Cálculo de edad
 def _calcular_edad(
     df: pd.DataFrame,
     df_patients: pd.DataFrame,
@@ -147,7 +147,7 @@ def _calcular_edad(
     return df
 
 
-# ── Agregación de medicación previa ──────────────────────────────────────────
+# Agregación de medicación previa
 def _agregar_medrecon(df_medrecon: pd.DataFrame) -> pd.DataFrame:
     """Agrega medrecon a una fila por stay_id. NO genera flags med_* (→ features.py)."""
     df_medrecon = df_medrecon.drop_duplicates(subset=["stay_id", "name"])
@@ -166,7 +166,7 @@ def _agregar_medrecon(df_medrecon: pd.DataFrame) -> pd.DataFrame:
     return agg
 
 
-# ── Label disposition ─────────────────────────────────────────────────────────
+# Label disposition
 def _construir_label_disposition(df: pd.DataFrame) -> pd.DataFrame:
     """
     Construye el label binario de disposition.
@@ -195,7 +195,7 @@ def _construir_label_disposition(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ── CCS diagnóstico principal ─────────────────────────────────────────────────
+# CCS diagnóstico principal
 def _agregar_ccs_diagnostico(
     df_diagnosis: pd.DataFrame,
     ccs_icd9: pd.DataFrame,
@@ -248,7 +248,7 @@ def _agregar_ccs_diagnostico(
     return result
 
 
-# ── Merge principal ───────────────────────────────────────────────────────────
+# Merge principal
 def construir_dataset_base(dfs: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """
     Merge de las tablas en un DataFrame por stay_id.
@@ -304,14 +304,13 @@ def construir_dataset_base(dfs: dict[str, pd.DataFrame]) -> pd.DataFrame:
     df["n_medicamentos"] = df["n_medicamentos"].fillna(0).astype("int16")
     df["medicacion_raw"] = df["medicacion_raw"].fillna("")
 
- 
     logger.success(
         f"Dataset base: {len(df):,} filas | {df.shape[1]} columnas"
     )
     return df
 
 
-# ── Carga de mappings CCS ─────────────────────────────────────────────────────
+# Carga de mappings CCS
 def cargar_mappings_ccs() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Carga los mappings CCS para su uso en la fase de featuring."""
     ruta_9  = DATA_INTERIM / "ccs_icd9_clean.parquet"
@@ -320,13 +319,13 @@ def cargar_mappings_ccs() -> tuple[pd.DataFrame, pd.DataFrame]:
     if not ruta_9.exists() or not ruta_10.exists():
         raise FileNotFoundError(
             "Mappings CCS no encontrados en data/interim/. "
-            "Ejecuta primero el notebook 01_exploration.ipynb."
+            "Ejecuta primero el notebook 01_data_exploration.ipynb."
         )
 
     return pd.read_parquet(ruta_9), pd.read_parquet(ruta_10)
 
 
-# ── Orquestador principal ─────────────────────────────────────────────────────
+# Orquestador principal
 def cargar_dataset_base(forzar: bool = False) -> pd.DataFrame:
     """
     Pipeline completo: raw → dataset base listo para cleaner.py.

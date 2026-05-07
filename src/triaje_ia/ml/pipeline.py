@@ -38,7 +38,7 @@ def construir_preprocesador() -> ColumnTransformer:
         ("encoder", OrdinalEncoder(
             categories=[["M", "F"]],
             handle_unknown="use_encoded_value",
-            unknown_value=0,
+            unknown_value=-1,
         )),
     ])
 
@@ -64,5 +64,53 @@ def construir_pipeline(clasificador) -> Pipeline:
     """
     return Pipeline([
         ("preprocesador", construir_preprocesador()),
+        ("clasificador",  clasificador),
+    ])
+
+
+def construir_preprocesador_lgbm() -> ColumnTransformer:
+    """
+    ColumnTransformer para LGBM: sin imputación de continuas.
+
+    LightGBM maneja NaN nativamente — imputar con mediana viola la
+    naturaleza NMAR de los vitales (ver memoria TFG §features.py).
+    Solo se procesan las categóricas (gender: OrdinalEncoder).
+    Binarias y continuas pasan sin transformación.
+    """
+    categoricas_transformer = Pipeline([
+        ("imputer", SimpleImputer(strategy="most_frequent")),
+        ("encoder", OrdinalEncoder(
+            categories=[["M", "F"]],
+            handle_unknown="use_encoded_value",
+            unknown_value=-1,
+        )),
+    ])
+
+    ct = ColumnTransformer(
+        transformers=[
+            ("categoricas", categoricas_transformer, FEATURES_CATEGORICAS),
+        ],
+        remainder="passthrough",
+        verbose_feature_names_out=False,
+    )
+    ct.set_output(transform="pandas")
+    return ct
+
+
+def construir_pipeline_lgbm(clasificador) -> Pipeline:
+    """
+    Pipeline para LightGBM: sin imputar continuas (NaN nativo).
+
+    Usa set_output(transform='pandas') para preservar nombres de features,
+    necesario para SHAP TreeExplainer.
+
+    Args:
+        clasificador: estimador sklearn compatible con fit/predict_proba.
+
+    Returns:
+        Pipeline listo para fit(X, y).
+    """
+    return Pipeline([
+        ("preprocesador", construir_preprocesador_lgbm()),
         ("clasificador",  clasificador),
     ])

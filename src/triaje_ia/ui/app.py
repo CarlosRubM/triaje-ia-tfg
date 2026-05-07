@@ -1,11 +1,13 @@
 """
 src/triaje_ia/ui/app.py
 ────────────────────────
-Interfaz Streamlit — Extracción de vector clínico con LLM.
+Interfaz Streamlit — Sistema híbrido LLM + ML para triaje clínico.
 Ejecutar: uv run streamlit run src/triaje_ia/ui/app.py
 """
 
 import base64
+import os
+import numpy as np
 import pandas as pd
 import streamlit as st
 from pathlib import Path
@@ -13,9 +15,39 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from triaje_ia.llm.extractor import extraer_vector_clinico
+from triaje_ia.llm.factory import crear_extractor
+from triaje_ia.llm.validator import validar_vector_clinico, NivelAlerta
+from triaje_ia.inference.adapter import vectorclinico_a_features
+from triaje_ia.ml.inferencia import cargar_modelo, predecir_proba
+from triaje_ia.ml.decision import threshold_a1, UMBRAL_A1_DEFAULT
+from triaje_ia.ml.explicabilidad import (
+    crear_explainer, explicar_prediccion, generar_shap_explanation_object,
+)
 
 LOGO_PATH = Path("src/triaje_ia/ui/assets/logo.png")
+
+# ─────────────────────────────────────────────────────────────
+# CACHED RESOURCES
+# ─────────────────────────────────────────────────────────────
+
+@st.cache_resource
+def _cargar_modelo_cached():
+    """Carga el modelo ordinal una sola vez."""
+    return cargar_modelo()  # usa NOMBRE_MODELO_DEFAULT = lgbm_ordinal
+
+
+# Backend LLM via variable de entorno (ollama local / api cloud)
+LLM_BACKEND = os.getenv("LLM_BACKEND", "ollama")
+_extraer_fn = crear_extractor(LLM_BACKEND)
+
+# Colores ESI por nivel de acuity
+ESI_CONFIG = {
+    1: {"label": "ESI 1 — Resucitación",    "color": "#DC2626", "bg": "#FEF2F2", "border": "#FECACA"},
+    2: {"label": "ESI 2 — Emergencia",       "color": "#EA580C", "bg": "#FFF7ED", "border": "#FED7AA"},
+    3: {"label": "ESI 3 — Urgente",          "color": "#CA8A04", "bg": "#FEFCE8", "border": "#FEF08A"},
+    4: {"label": "ESI 4 — Menos urgente",    "color": "#2563EB", "bg": "#EFF6FF", "border": "#BFDBFE"},
+    5: {"label": "ESI 5 — No urgente",       "color": "#16A34A", "bg": "#F0FDF4", "border": "#BBF7D0"},
+}
 
 
 def logo_base64() -> str:
@@ -167,11 +199,43 @@ html, body,
     animation: shimmer 1.5s infinite linear;
 }
 
-/* ── ML pending banner ── */
+/* ── ML result panel ── */
 .ml-pending {
     background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 10px;
     padding: 1.1rem 1.4rem; margin-top: 1rem;
     display: flex; align-items: center; gap: 0.85rem;
+}
+.esi-badge {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    padding: 0.65rem 1.3rem; border-radius: 10px;
+    font-family: var(--font-mono); font-size: 0.78rem;
+    font-weight: 600; letter-spacing: 0.04em;
+    border-width: 1.5px; border-style: solid;
+}
+.prob-bar-bg {
+    height: 22px; background: #F1F5F9; border-radius: 6px;
+    overflow: hidden; position: relative;
+}
+.prob-bar-fill {
+    height: 100%; border-radius: 6px;
+    transition: width 0.6s ease;
+}
+.prob-label {
+    font-family: var(--font-mono); font-size: 0.65rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-secondary); margin-bottom: 0.2rem;
+}
+.alert-clinical {
+    background: #FEF2F2; border: 1px solid #FECACA;
+    border-left: 4px solid #DC2626; border-radius: 10px;
+    padding: 0.75rem 1.1rem; margin-bottom: 0.8rem;
+    font-size: 0.82rem; color: #991B1B;
+}
+.warning-validation {
+    background: #FFFBEB; border: 1px solid #FDE68A;
+    border-left: 4px solid #D97706; border-radius: 10px;
+    padding: 0.6rem 1rem; margin-bottom: 0.6rem;
+    font-size: 0.78rem; color: #92400E;
 }
 
 @media (max-width: 960px) {
@@ -183,7 +247,11 @@ html, body,
 """, unsafe_allow_html=True)
 
 
-MODELOS_LLM = ["llama3.2", "qwen2.5", "qwen2.5:7b", "llama3.2:1b", "mistral"]
+MODELOS_LLM = (
+    ["llama3.2", "qwen2.5", "qwen2.5:7b", "llama3.2:1b", "mistral"]
+    if LLM_BACKEND == "ollama"
+    else ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
+)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -282,8 +350,13 @@ with col_right:
                 """, unsafe_allow_html=True)
 
             try:
-                with st.spinner("Extrayendo vector clínico con Ollama..."):
-                    vector = extraer_vector_clinico(narrativa, modelo=modelo_llm)
+                spinner_msg = (
+                    "Extrayendo vector clínico con Ollama..."
+                    if LLM_BACKEND == "ollama"
+                    else "Extrayendo vector clínico via API..."
+                )
+                with st.spinner(spinner_msg):
+                    vector = _extraer_fn(narrativa, modelo=modelo_llm)
 
                 st.session_state.ultimo_vector    = vector
                 st.session_state.ultima_narrativa = narrativa.strip()
@@ -413,28 +486,190 @@ with col_right:
 
 
 # ─────────────────────────────────────────────────────────────
-# SECCIÓN ML — pendiente de entrenamiento
+# SECCIÓN ML — Predicción diagnóstica
 # ─────────────────────────────────────────────────────────────
 st.markdown('<div class="header-divider"></div>', unsafe_allow_html=True)
 st.markdown('<span class="sec-label">Predicción diagnóstica · Clasificación ML</span>', unsafe_allow_html=True)
 
-st.markdown("""
-<div class="ml-pending">
-    <div style="width:36px; height:36px; border:1.5px solid #CBD5E1; border-radius:8px;
-                display:flex; align-items:center; justify-content:center; flex-shrink:0; opacity:0.6;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-             stroke="#64748B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
+# Intentar cargar el modelo
+try:
+    modelo = _cargar_modelo_cached()
+    _modelo_disponible = True
+except FileNotFoundError:
+    _modelo_disponible = False
+
+if not _modelo_disponible:
+    st.markdown("""
+    <div class="ml-pending">
+        <div style="width:36px; height:36px; border:1.5px solid #CBD5E1; border-radius:8px;
+                    display:flex; align-items:center; justify-content:center; flex-shrink:0; opacity:0.6;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="#64748B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+        </div>
+        <div>
+            <p style="font-size:0.82rem; color:#334155; font-weight:500; margin-bottom:2px;">
+                Modelo no encontrado
+            </p>
+            <p style="font-size:0.73rem; color:#94A3B8; line-height:1.65; margin:0;">
+                Entrena el modelo ordinal ejecutando el notebook
+                <code>06_modeling.ipynb</code> y exporta
+                <code>models/lgbm_ordinal.joblib</code>.
+            </p>
+        </div>
     </div>
-    <div>
-        <p style="font-size:0.82rem; color:#334155; font-weight:500; margin-bottom:2px;">
-            Pendiente de entrenamiento con MIMIC-IV-ED
-        </p>
-        <p style="font-size:0.73rem; color:#94A3B8; line-height:1.65; margin:0;">
-            Una vez entrenado el modelo XGBoost, esta sección mostrará el nivel ESI predicho,
-            la confianza y la distribución de probabilidades por clase.
-        </p>
+    """, unsafe_allow_html=True)
+
+elif st.session_state.ultimo_vector is not None:
+    vector = st.session_state.ultimo_vector
+    narrativa_actual = st.session_state.ultima_narrativa
+
+    # 1. Validación semántica
+    alertas = validar_vector_clinico(vector, narrativa_actual)
+
+    # 2. Adapter: VectorClinico → 88 features
+    X = vectorclinico_a_features(vector)
+
+    # 3. Inferencia: predict_proba
+    probas = predecir_proba(modelo, X)
+    probas_fila = probas[0]  # shape (5,)
+
+    # 4. Decisión con threshold clínico
+    clase_predicha = threshold_a1(probas_fila)
+    confianza = float(probas_fila[clase_predicha - 1])
+    threshold_activado = clase_predicha == 1 and np.argmax(probas_fila) != 0
+
+    esi = ESI_CONFIG[clase_predicha]
+
+    # ── Alerta clínica si threshold A1 se activó ──
+    if threshold_activado:
+        st.markdown(f"""
+        <div class="alert-clinical">
+            <strong>⚡ Alerta de seguridad clínica:</strong>
+            P(acuity=1) = {probas_fila[0]:.1%} ≥ umbral {UMBRAL_A1_DEFAULT:.0%}.
+            Reclasificado a ESI 1 por política de seguridad (threshold_a1).
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Warnings del validator ──
+    alertas_warn = [a for a in alertas if a.nivel in (NivelAlerta.WARNING, NivelAlerta.ERROR)]
+    for alerta in alertas_warn:
+        icon = "❌" if alerta.nivel == NivelAlerta.ERROR else "⚠️"
+        st.markdown(f"""
+        <div class="warning-validation">
+            {icon} <strong>[{alerta.campo}]</strong> {alerta.mensaje}
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Badge ESI ──
+    st.markdown(f"""
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem;">
+        <div class="esi-badge" style="color:{esi['color']}; background:{esi['bg']};
+                    border-color:{esi['border']};">
+            <span style="font-size:1.3rem; line-height:1;">{'🔴🟠🟡🔵🟢'[clase_predicha-1]}</span>
+            {esi['label']}
+        </div>
+        <div style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary);">
+            Confianza: <strong style="color:{esi['color']};">{confianza:.1%}</strong>
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+    # ── Barras de probabilidad ──
+    clases_nombre = ["ESI 1", "ESI 2", "ESI 3", "ESI 4", "ESI 5"]
+    colores_barra = ["#DC2626", "#EA580C", "#CA8A04", "#2563EB", "#16A34A"]
+
+    barras_html = ""
+    for i in range(5):
+        p = probas_fila[i]
+        width = max(p * 100, 1.5)  # mínimo visible
+        is_max = (i == clase_predicha - 1)
+        opacity = "1" if is_max else "0.55"
+        barras_html += f"""
+        <div style="margin-bottom:0.45rem; opacity:{opacity};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <span class="prob-label">{clases_nombre[i]}</span>
+                <span style="font-family:var(--font-mono); font-size:0.72rem;
+                             color:{'#0F172A' if is_max else '#94A3B8'};
+                             font-weight:{'600' if is_max else '400'};">{p:.1%}</span>
+            </div>
+            <div class="prob-bar-bg">
+                <div class="prob-bar-fill" style="width:{width:.1f}%;
+                     background:{colores_barra[i]};"></div>
+            </div>
+        </div>
+        """
+
+    st.markdown(f"""
+    <div style="background:#FFF; border:1px solid #E2E8F0; border-radius:12px;
+                padding:1.2rem 1.4rem; box-shadow:0 1px 3px rgba(0,0,0,0.04);
+                margin-bottom:1.2rem;">
+        <div style="font-size:0.57rem; letter-spacing:0.15em; text-transform:uppercase;
+                    color:#64748B; margin-bottom:0.8rem; font-weight:500;">Distribución de probabilidades</div>
+        {barras_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── SHAP Waterfall ──
+    try:
+        explainer = crear_explainer(modelo, clase=clase_predicha)
+        shap_explanation = generar_shap_explanation_object(
+            explainer, X, clase=clase_predicha, modelo=modelo,
+        )
+        import shap
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(7, 4))
+        shap.plots.waterfall(shap_explanation, max_display=10, show=False)
+        plt.tight_layout()
+        st.markdown("""
+        <div style="font-size:0.57rem; letter-spacing:0.15em; text-transform:uppercase;
+                    color:#64748B; margin-bottom:0.4rem; font-weight:500;">Explicabilidad SHAP</div>
+        """, unsafe_allow_html=True)
+        st.pyplot(fig, use_container_width=True)
+        plt.close(fig)
+
+        # Top features texto
+        resultado_shap = explicar_prediccion(
+            explainer, X, clase_predicha=clase_predicha, modelo=modelo,
+        )
+        if resultado_shap.top_positivas:
+            tops = ", ".join(
+                f"<strong>{f.nombre}</strong> ({f.shap_value:+.3f})"
+                for f in resultado_shap.top_positivas[:3]
+            )
+            st.markdown(f"""
+            <p style="font-size:0.73rem; color:#64748B; line-height:1.7; margin-top:0.3rem;">
+                Factores principales ↑: {tops}
+            </p>
+            """, unsafe_allow_html=True)
+
+    except Exception as e:
+        st.markdown(f"""
+        <p style="font-size:0.75rem; color:#94A3B8; margin-top:0.5rem;">
+            SHAP no disponible: {e}
+        </p>
+        """, unsafe_allow_html=True)
+
+else:
+    # Sin análisis activo
+    st.markdown("""
+    <div class="ml-pending">
+        <div style="width:36px; height:36px; border:1.5px solid #CBD5E1; border-radius:8px;
+                    display:flex; align-items:center; justify-content:center; flex-shrink:0; opacity:0.6;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="#64748B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+        </div>
+        <div>
+            <p style="font-size:0.82rem; color:#334155; font-weight:500; margin-bottom:2px;">
+                Sin predicción activa
+            </p>
+            <p style="font-size:0.73rem; color:#94A3B8; line-height:1.65; margin:0;">
+                Analice un caso clínico para ver la predicción ESI,
+                la distribución de probabilidades y la explicación SHAP.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)

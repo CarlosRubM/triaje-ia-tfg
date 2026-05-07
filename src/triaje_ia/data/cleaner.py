@@ -1,12 +1,12 @@
 """
 src/triaje_ia/data/cleaner.py
-──────────────────────────────
+
 Limpieza estructural del dataset base producido por loader.py.
 
 Responsabilidades:
   - Eliminar filas sin target (acuity es nulo o no es un número entero entre 1 y 5)
   - Eliminar columnas no útiles para el modelo
-  - Convertir vitales erroneas a NaN (errores de registro)
+  - Convertir vitales erróneas a NaN (errores de registro)
   - Parsear y normalizar pain (campo texto libre → numérico)
   - Agrupar race en 6 categorías
   - Normalizar tipos de datos
@@ -23,8 +23,7 @@ from loguru import logger
 
 from triaje_ia.config import DATA_INTERIM
 
-
-# ── Rangos fisiológicos aceptables ────────────────────────────────────────────
+# Rangos fisiológicos aceptables
 # Valores fuera de rango → NaN (errores de registro, no outliers clínicos)
 RANGOS_VITALES: dict[str, tuple[float, float]] = {
     "temperature": (95.0, 107.0),   # °F
@@ -35,8 +34,8 @@ RANGOS_VITALES: dict[str, tuple[float, float]] = {
     "dbp":         (10.0, 200.0),
 }
 
-# ── Agrupación de race ────────────────────────────────────────────────────────
-#Aunque nos era variable de entrenamiento
+# Agrupación de race
+# race se mantiene como variable de auditoría de sesgos, no entra al modelo
 RACE_MAP: dict[str, str] = {
     "WHITE":                                      "WHITE",
     "WHITE - OTHER EUROPEAN":                     "WHITE",
@@ -73,15 +72,7 @@ RACE_MAP: dict[str, str] = {
     "UNABLE TO OBTAIN":                           "UNKNOWN",
 }
 
-# Valores de pain que indican no-respuesta → NaN
-PAIN_NO_RESPUESTA: frozenset[str] = frozenset({
-    "unable", "uta", "u/a", "ua", "unknown", "unk", "refused",
-    "ref", "declined", "critical", "intubated", "sedated",
-    "sleeping", "asleep", "non-verbal", "nonverbal", "n/a",
-    "no", "none", "no pain", "denies",
-})
-
-# ── Funciones privadas ────────────────────────────────────────────────────────
+# Funciones privadas
 
 def _parsear_pain(val) -> float:
     """Convierte pain a numérico 0-10. Cualquier texto libre → NaN."""
@@ -109,14 +100,14 @@ def _limpiar_vitales(df: pd.DataFrame) -> pd.DataFrame:
         n = fuera.sum()
         if n > 0:
             df.loc[fuera, col] = np.nan
-            logger.debug(f"{col}: {n:,} valores fuera de [{vmin}, {vmax}] → NaN")
+            logger.info(f"{col}: {n:,} valores fuera de [{vmin}, {vmax}] → NaN")
     return df
 
 
 def _agrupar_race(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Agrupa las 33 categorías de race en 6 grupos.
-    Resultado en columna race_grouped. La columna race original se elimina.
+    Agrupa las 33 categorías de race en 6 grupos canónicos.
+    Sobrescribe la columna ``race`` in-place; no crea columnas nuevas.
     """
     df = df.copy()
     df["race"] = df["race"].map(RACE_MAP).fillna("UNKNOWN")
@@ -147,7 +138,7 @@ def limpiar_dataset(df: pd.DataFrame) -> pd.DataFrame:
     cols_eliminar = [
         "hadm_id",        # ID administrativo, no es feature
         "disposition",    # sustituida por label_disposition
-        # outtime: se conserva porque lo necesitamos para despues
+        # outtime: se conserva para feature engineering temporal
     ]
     df = df.drop(columns=[c for c in cols_eliminar if c in df.columns])
     logger.info(f"Columnas eliminadas: {cols_eliminar}")
@@ -167,12 +158,9 @@ def limpiar_dataset(df: pd.DataFrame) -> pd.DataFrame:
     # 5. Race → 6 categorías
     df = _agrupar_race(df)
 
-    # 6. Sanear medicacion_raw: NaN → "" para evitar errores en str.contains de features.py
+    # 6. Sanear medicacion_raw: NaN → "" (red de seguridad; loader.py ya hace fillna)
     if "medicacion_raw" in df.columns:
-        n_nulos_med = df["medicacion_raw"].isna().sum()
         df["medicacion_raw"] = df["medicacion_raw"].fillna("")
-        if n_nulos_med > 0:
-            logger.debug(f"medicacion_raw: {n_nulos_med:,} NaN → \"\"")
 
     # 7. Tipos de datos
     df["acuity"] = df["acuity"].astype("int8")
@@ -187,6 +175,15 @@ def limpiar_dataset(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def cargar_dataset_limpio(forzar: bool = False) -> pd.DataFrame:
+    """
+    Devuelve el dataset limpio, usando caché si existe.
+
+    Args:
+        forzar: Si True, recalcula aunque exista caché.
+
+    Returns:
+        DataFrame limpio listo para feature engineering.
+    """
     from triaje_ia.data.loader import cargar_dataset_base
 
     DATA_INTERIM.mkdir(parents=True, exist_ok=True)

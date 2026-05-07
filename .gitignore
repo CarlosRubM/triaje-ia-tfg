@@ -41,7 +41,7 @@ notebooks/**/*.png
 notebooks/**/*.pkl
 notebooks/**/*.json
 notebooks/catboost_info/
-notebooks/.ipynb_checkpoints/
+**/.ipynb_checkpoints/
 catboost_info/
 
 # Planes internos de Cursor (contexto de trabajo local)
