@@ -761,8 +761,10 @@ def cargar_features(forzar: bool = False) -> pd.DataFrame:
     Pipeline completo con caché: raw → limpieza → features → dataset_features.parquet.
 
     Utilidad standalone para obtener las 88 features sin pasar por los notebooks.
-    El flujo de entrenamiento habitual (notebooks 06/07) carga X_train/X_test
-    generados por ``05_feature_engineering.ipynb``, no por esta función.
+    El flujo de entrenamiento habitual (notebooks 06/07) carga normalmente los
+    artefactos generados en ``05b_feature_validation.ipynb`` (split temporal),
+    mientras que ``05_feature_engineering.ipynb`` exporta el espacio completo
+    de características (p. ej. ``dataset_features.parquet``).
 
     Args:
         forzar: Si True, recalcula aunque exista el caché.
@@ -792,3 +794,57 @@ def cargar_features(forzar: bool = False) -> pd.DataFrame:
     df[TODAS_FEATURES + [TARGET]].to_parquet(cache, index=False)
     logger.success(f"Guardado en {cache}: {len(df):,} filas | {len(TODAS_FEATURES)} features")
     return df
+
+# --- Utilidades de Persistencia de Métricas ---
+
+def update_metrics_json(feature, decision_final=None, H=None, eta2=None, V_cramer=None, **extra):
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    # Resolviendo ARTIFACTS_DIR relativo a este archivo (src/triaje_ia/data/features.py)
+    # asumiendo que artifacts está en la raíz del proyecto
+    ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+    ARTIFACTS_DIR = ROOT_DIR / "artifacts"
+    ARTIFACTS_DIR.mkdir(exist_ok=True)
+    METRICS_FILE = ARTIFACTS_DIR / "feature_metrics.json"
+
+    if not METRICS_FILE.exists():
+        with open(METRICS_FILE, "w", encoding="utf-8") as f:
+            json.dump({"version": "1.0", "features_con_metricas": {}}, f, indent=2, ensure_ascii=False)
+
+    with open(METRICS_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if "features_con_metricas" not in data or not isinstance(data["features_con_metricas"], dict):
+        data["features_con_metricas"] = {}
+
+    data.setdefault("version", "1.0")
+    data["ultima_actualizacion"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    if feature not in data["features_con_metricas"]:
+        data["features_con_metricas"][feature] = {
+            "decision_final": "pendiente",
+            "H": None,
+            "eta2": None,
+            "V_cramer": None,
+        }
+
+    entry = data["features_con_metricas"][feature]
+
+    if decision_final is not None:
+        entry["decision_final"] = decision_final
+    if H is not None:
+        entry["H"] = H
+    if eta2 is not None:
+        entry["eta2"] = eta2
+    if V_cramer is not None:
+        entry["V_cramer"] = V_cramer
+
+    for k, v in extra.items():
+        if v is None:
+            continue
+        entry[k] = v
+
+    with open(METRICS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
