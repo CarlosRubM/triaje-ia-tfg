@@ -17,9 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from triaje_ia.llm.factory import crear_extractor
 from triaje_ia.llm.validator import validar_vector_clinico, NivelAlerta
-from triaje_ia.inference.adapter import vectorclinico_a_features
-from triaje_ia.ml.inferencia import cargar_modelo, predecir_proba
-from triaje_ia.ml.decision import threshold_a1, UMBRAL_A1_DEFAULT
+from triaje_ia.inference.predictor import TriajePredictor
 from triaje_ia.ml.explicabilidad import (
     crear_explainer, explicar_prediccion, generar_shap_explanation_object,
 )
@@ -31,9 +29,9 @@ LOGO_PATH = Path("src/triaje_ia/ui/assets/logo.png")
 # ─────────────────────────────────────────────────────────────
 
 @st.cache_resource
-def _cargar_modelo_cached():
-    """Carga el modelo ordinal una sola vez."""
-    return cargar_modelo()  # usa NOMBRE_MODELO_DEFAULT = lgbm_ordinal
+def _cargar_predictor():
+    """Carga TriajePredictor una sola vez (lee active_model.json)."""
+    return TriajePredictor()
 
 
 # Backend LLM via variable de entorno (ollama local / api cloud)
@@ -491,9 +489,9 @@ with col_right:
 st.markdown('<div class="header-divider"></div>', unsafe_allow_html=True)
 st.markdown('<span class="sec-label">Predicción diagnóstica · Clasificación ML</span>', unsafe_allow_html=True)
 
-# Intentar cargar el modelo
+# Intentar cargar el predictor
 try:
-    modelo = _cargar_modelo_cached()
+    predictor = _cargar_predictor()
     _modelo_disponible = True
 except FileNotFoundError:
     _modelo_disponible = False
@@ -513,9 +511,8 @@ if not _modelo_disponible:
                 Modelo no encontrado
             </p>
             <p style="font-size:0.73rem; color:#94A3B8; line-height:1.65; margin:0;">
-                Entrena el modelo ordinal ejecutando el notebook
-                <code>06_modeling.ipynb</code> y exporta
-                <code>models/lgbm_ordinal.joblib</code>.
+                Verifica que <code>models/active_model.json</code> existe
+                y que los artefactos referenciados están en <code>models/</code>.
             </p>
         </div>
     </div>
@@ -528,17 +525,13 @@ elif st.session_state.ultimo_vector is not None:
     # 1. Validación semántica
     alertas = validar_vector_clinico(vector, narrativa_actual)
 
-    # 2. Adapter: VectorClinico → 88 features
-    X = vectorclinico_a_features(vector)
-
-    # 3. Inferencia: predict_proba
-    probas = predecir_proba(modelo, X)
-    probas_fila = probas[0]  # shape (5,)
-
-    # 4. Decisión con threshold clínico
-    clase_predicha = threshold_a1(probas_fila)
-    confianza = float(probas_fila[clase_predicha - 1])
-    threshold_activado = clase_predicha == 1 and np.argmax(probas_fila) != 0
+    # 2-4. Inferencia unificada
+    result = predictor.predict(vector, narrativa_actual)
+    probas_fila = result.probas
+    clase_predicha = result.clase_predicha
+    confianza = result.confianza
+    threshold_activado = result.threshold_a1_activado
+    X = result.X
 
     esi = ESI_CONFIG[clase_predicha]
 
@@ -547,7 +540,7 @@ elif st.session_state.ultimo_vector is not None:
         st.markdown(f"""
         <div class="alert-clinical">
             <strong>⚡ Alerta de seguridad clínica:</strong>
-            P(acuity=1) = {probas_fila[0]:.1%} ≥ umbral {UMBRAL_A1_DEFAULT:.0%}.
+            P(acuity=1) = {probas_fila[0]:.1%} ≥ umbral 20%.
             Reclasificado a ESI 1 por política de seguridad (threshold_a1).
         </div>
         """, unsafe_allow_html=True)
@@ -613,9 +606,9 @@ elif st.session_state.ultimo_vector is not None:
 
     # ── SHAP Waterfall ──
     try:
-        explainer = crear_explainer(modelo, clase=clase_predicha)
+        explainer = crear_explainer(predictor._clf, clase=clase_predicha)
         shap_explanation = generar_shap_explanation_object(
-            explainer, X, clase=clase_predicha, modelo=modelo,
+            explainer, X, clase=clase_predicha, modelo=predictor._clf,
         )
         import shap
         import matplotlib.pyplot as plt
@@ -631,7 +624,7 @@ elif st.session_state.ultimo_vector is not None:
 
         # Top features texto
         resultado_shap = explicar_prediccion(
-            explainer, X, clase_predicha=clase_predicha, modelo=modelo,
+            explainer, X, clase_predicha=clase_predicha, modelo=predictor._clf,
         )
         if resultado_shap.top_positivas:
             tops = ", ".join(
