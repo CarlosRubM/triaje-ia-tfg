@@ -579,7 +579,7 @@ elif st.session_state.ultimo_vector is not None:
 
     esi = ESI_CONFIG[clase_predicha]
 
-    # ── Alerta clínica si threshold A1 se activó ──
+    # Alerta clinica si la probabilidad de A1 supera el umbral elegido.
     if threshold_activado:
         st.markdown(f"""
         <div class="alert-clinical" style="display:flex; align-items:flex-start; gap:0.6rem;">
@@ -589,9 +589,9 @@ elif st.session_state.ultimo_vector is not None:
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
             <div>
-                <strong>Alerta de seguridad clínica:</strong>
-                P(acuity=1) = {probas_fila[0]:.1%} ≥ umbral 20%.
-                Reclasificado a ESI 1 por política de seguridad (threshold_a1).
+                <strong>Alerta de seguridad clinica:</strong>
+                P(acuity=1) = {probas_fila[0]:.1%} supera el umbral de aviso.
+                Revisar posible criticidad A1 antes de confirmar el nivel sugerido.
             </div>
         </div>
         """, unsafe_allow_html=True)

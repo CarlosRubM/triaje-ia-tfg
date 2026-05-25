@@ -30,7 +30,6 @@ import pandas as pd
 
 from triaje_ia.config import MODELS_DIR
 from triaje_ia.llm.schemas import VectorClinico
-from triaje_ia.ml.decision import threshold_a1
 from triaje_ia.ml.explicabilidad import (
     ExplicacionSHAP,
     crear_explainer,
@@ -48,7 +47,7 @@ def _get_bert_model() -> tuple:
         return _bert_cache["tokenizer"], _bert_cache["model"], _bert_cache["device"]
     try:
         import torch
-        from transformers import AutoTokenizer, AutoModel
+        from transformers import AutoModel, AutoTokenizer
 
         tokenizer = AutoTokenizer.from_pretrained(_BERT_MODEL_NAME)
         model = AutoModel.from_pretrained(_BERT_MODEL_NAME)
@@ -103,23 +102,46 @@ class TriajePredictor:
         arts = cfg["artifacts"]
 
         self._clf = joblib.load(MODELS_DIR / arts["classifier"])
-        self._feature_names: list[str] = json.loads(
+        feature_payload = json.loads(
             (MODELS_DIR / arts["feature_list"]).read_text(encoding="utf-8")
-        )["todas_features"]
+        )
+        self._feature_names: list[str] = (
+            feature_payload.get("features") or feature_payload["todas_features"]
+        )
 
-        self._thresholds: Optional[list[float]] = (
+        threshold_payload = (
             json.loads((MODELS_DIR / arts["thresholds"]).read_text(encoding="utf-8"))
             if arts.get("thresholds")
             else None
         )
+        self._decision_policy = "argmax"
+        self._warning_threshold_a1 = 0.40
+        self._class_weights: Optional[np.ndarray] = None
+        if isinstance(threshold_payload, dict):
+            self._decision_policy = str(threshold_payload.get("policy", "argmax"))
+            self._warning_threshold_a1 = float(
+                threshold_payload.get(
+                    "warning_threshold_a1",
+                    threshold_payload.get("threshold_a1", self._warning_threshold_a1),
+                )
+            )
+            if "class_weights" in threshold_payload:
+                self._class_weights = np.asarray(
+                    threshold_payload["class_weights"], dtype=float
+                )
+        elif threshold_payload is not None:
+            self._class_weights = np.asarray(threshold_payload, dtype=float)
+
         self._svd = (
-            joblib.load(MODELS_DIR / arts["bert_svd"])
+            joblib.load((MODELS_DIR / arts["bert_svd"]).resolve())
             if arts.get("bert_svd")
             else None
         )
         self._assumptions: dict = (
             json.loads(
-                (MODELS_DIR / arts["production_assumptions"]).read_text(encoding="utf-8")
+                (MODELS_DIR / arts["production_assumptions"]).read_text(
+                    encoding="utf-8"
+                )
             )
             if arts.get("production_assumptions")
             else {}
@@ -136,16 +158,11 @@ class TriajePredictor:
         self._medians: dict = self._assumptions.get("imputation_medians", {})
 
     def predict(self, vector: VectorClinico, narrativa: str) -> TriajeResult:
-        X = self._build_features(vector, narrativa)
-        probas = self._clf.predict_proba(X)[0]
+        x = self._build_features(vector, narrativa)
+        probas = self._clf.predict_proba(x)[0]
 
-        if self._thresholds is not None:
-            probas_w = probas * np.array(self._thresholds)
-            clase = int(np.argmax(probas_w)) + 1
-        else:
-            clase = threshold_a1(probas)
-
-        threshold_activado = clase == 1 and int(np.argmax(probas)) != 0
+        clase = int(np.argmax(probas)) + 1
+        threshold_activado = bool(probas[0] >= self._warning_threshold_a1)
 
         alertas: tuple[str, ...] = (
             (self._assumptions["mensaje_ui"],)
@@ -158,8 +175,8 @@ class TriajePredictor:
             clase_predicha=clase,
             confianza=float(probas[clase - 1]),
             threshold_a1_activado=threshold_activado,
-            X=X,
-            feature_names=list(X.columns),
+            X=x,
+            feature_names=list(x.columns),
             alertas_dominio=alertas,
         )
 
@@ -182,11 +199,11 @@ class TriajePredictor:
           Orden final = self._feature_names (82 cols exactas del entrenamiento).
         Si self._svd es None (modelo placeholder), devuelve solo las tabulares.
         """
-        from triaje_ia.inference.adapter import (
-            vectorclinico_a_features,
-            _celsius_a_fahrenheit,
-        )
         from triaje_ia.data.features import TODAS_FEATURES
+        from triaje_ia.inference.adapter import (
+            _celsius_a_fahrenheit,
+            vectorclinico_a_features,
+        )
 
         # ── 1. Features tabulares del adapter (88 cols) ──────────────────────
         df_88 = vectorclinico_a_features(vector)
@@ -208,12 +225,18 @@ class TriajePredictor:
 
         # ── 3. BERT embeddings → SVD ─────────────────────────────────────────
         if self._svd is not None:
-            texto = ", ".join(vector.sintomas_presentes) if vector.sintomas_presentes else ""
+            texto = (
+                ", ".join(vector.sintomas_presentes)
+                if vector.sintomas_presentes
+                else ""
+            )
             emb_768 = _get_cls_embedding(texto)
             emb_svd = self._svd.transform(emb_768.reshape(1, -1))
             df_bert = pd.DataFrame(
                 emb_svd, columns=self._bert_cols, index=df.index
             )
-            df = pd.concat([df.reset_index(drop=True), df_bert.reset_index(drop=True)], axis=1)
+            df = pd.concat(
+                [df.reset_index(drop=True), df_bert.reset_index(drop=True)], axis=1
+            )
 
         return df[self._feature_names]
