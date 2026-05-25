@@ -20,6 +20,7 @@ Flujo:
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -39,6 +40,7 @@ from triaje_ia.ml.explicabilidad import (
 # ── Singleton perezoso para Bio_ClinicalBERT ────────────────────────────────
 _BERT_MODEL_NAME = "emilyalsentzer/Bio_ClinicalBERT"
 _bert_cache: dict = {}
+_POLITICAS_PERMITIDAS = {"argmax", "argmax_with_a1_warning"}
 
 
 def _get_bert_model() -> tuple:
@@ -129,8 +131,22 @@ class TriajePredictor:
                 self._class_weights = np.asarray(
                     threshold_payload["class_weights"], dtype=float
                 )
+            minimum_threshold_a1 = threshold_payload.get("minimum_allowed_threshold_a1")
+            if minimum_threshold_a1 is not None and (
+                self._warning_threshold_a1 < float(minimum_threshold_a1)
+            ):
+                raise ValueError(
+                    "warning_threshold_a1 no puede ser menor que "
+                    "minimum_allowed_threshold_a1."
+                )
         elif threshold_payload is not None:
             self._class_weights = np.asarray(threshold_payload, dtype=float)
+        if self._decision_policy not in _POLITICAS_PERMITIDAS:
+            raise ValueError(
+                "Politica de decision no soportada: "
+                f"{self._decision_policy!r}. "
+                f"Permitidas: {sorted(_POLITICAS_PERMITIDAS)}"
+            )
 
         self._svd = (
             joblib.load((MODELS_DIR / arts["bert_svd"]).resolve())
@@ -151,6 +167,16 @@ class TriajePredictor:
         self._bert_cols: list[str] = [
             f for f in self._feature_names if f.startswith("bert_svd_")
         ]
+        if self._svd is not None:
+            n_componentes_svd = getattr(self._svd, "n_components", None)
+            if n_componentes_svd is not None and len(self._bert_cols) != int(
+                n_componentes_svd
+            ):
+                raise ValueError(
+                    "Incompatibilidad entre feature_list.json y bert_svd.joblib: "
+                    f"{len(self._bert_cols)} columnas BERT frente a "
+                    f"{n_componentes_svd} componentes SVD."
+                )
         self._tabular_features: list[str] = [
             f for f in self._feature_names if not f.startswith("bert_svd_")
         ]
@@ -227,11 +253,13 @@ class TriajePredictor:
 
         # ── 3. BERT embeddings → SVD ─────────────────────────────────────────
         if self._svd is not None:
-            texto = (
-                ", ".join(vector.sintomas_presentes)
-                if vector.sintomas_presentes
-                else ""
-            )
+            texto = ", ".join(vector.sintomas_presentes).strip()
+            if not texto and narrativa.strip():
+                logging.warning(
+                    "BERT usa la narrativa como fallback porque el LLM no "
+                    "extrajo sintomas_presentes."
+                )
+                texto = narrativa.strip()
             emb_768 = _get_cls_embedding(texto)
             emb_svd = self._svd.transform(emb_768.reshape(1, -1))
             df_bert = pd.DataFrame(
