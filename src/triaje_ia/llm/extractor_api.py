@@ -9,16 +9,13 @@ con APIs HTTP para despliegues en cloud donde no hay GPU local.
 Groq es gratuito y ofrece ~1-2s de latencia con llama-3.3-70b-versatile.
 """
 
-import json
 import os
 
 from loguru import logger
 
-from triaje_ia.llm.schemas import VectorClinico
-
-
-# Reutilizamos el mismo SYSTEM_PROMPT del extractor Ollama
 from triaje_ia.llm.extractor import SYSTEM_PROMPT
+from triaje_ia.llm.normalizer import normalizar_vector_clinico
+from triaje_ia.llm.schemas import VectorClinico
 
 
 def extraer_vector_clinico_api(
@@ -111,6 +108,8 @@ def extraer_vector_clinico_api(
     data = resp.json()
     content = data["choices"][0]["message"]["content"]
 
-    vector = VectorClinico.model_validate_json(content)
-    logger.success(f"Extracción API completada: {len(vector.sintomas_presentes)} síntomas")
+    vector = normalizar_vector_clinico(VectorClinico.model_validate_json(content))
+    logger.success(
+        f"Extracción API completada: {len(vector.sintomas_presentes)} síntomas"
+    )
     return vector

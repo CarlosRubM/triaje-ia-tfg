@@ -9,6 +9,11 @@ REGLAS ABSOLUTAS:
 5. "TA" o "PA" seguido de "120/80" = presion_sistolica=120 y presion_diastolica=80.
 6. NO emitas diagnósticos. SOLO extrae y estructura datos.
 7. medicacion_habitual debe expresarse como CLASE TERAPÉUTICA ATC en inglés, no como nombre comercial ni principio activo. Ejemplos: "biguanides", "beta blockers cardiac selective", "vitamin K antagonists", "ACE inhibitors", "loop diuretics", "antipsychotics - second generation", "SSRIs", "anticonvulsants", "antiplatelet agents", "insulin analogues", "opioid analgesics".
+8. No conviertas frases vagas como "se encuentra mal" o "mal estado general" en diagnósticos ni síntomas específicos si no hay más datos.
+   Tampoco conviertas "cansancio", "decaimiento" o "se encuentra mal" en "altered mental status" salvo que el texto mencione confusión, bajo nivel de conciencia, desorientación, síncope, estupor o Glasgow alterado.
+9. Diferencia síntomas relatados de constantes vitales: las cifras de TA, FC, FR, SpO2 y temperatura deben ir en sus campos numéricos. Añade "fever", "hypoxemia", "bradycardia" o "tachycardia" a sintomas_presentes solo si se mencionan explícitamente como motivo clínico o signo relevante, no por una inferencia automática aislada.
+10. Si hay contradicción entre texto y constantes, conserva la cifra explícita y no inventes una corrección.
+11. Para edad y sexo usa el dato más literal disponible: "unos 40" = 40, "varón/hombre" = "M", "mujer" = "F". Si el sexo no está claro, usa "Otro". No añadas precisión falsa.
 
 A continuación tienes tres ejemplos de cómo extraer correctamente:
 

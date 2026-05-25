@@ -8,9 +8,23 @@ Devuelve warnings, no errores — el sistema sigue funcionando.
 """
 
 from __future__ import annotations
+
+import re
 from dataclasses import dataclass
 from enum import Enum
+
 from triaje_ia.llm.schemas import VectorClinico
+
+_PATRON_DOLOR = re.compile(r"\b(dolor|pain|eva|escala\s+dolor|\d{1,2}\s*/\s*10)\b")
+_PATRON_DOLOR_NEGADO = re.compile(
+    r"\b(niega|no refiere|sin|ausencia de)\s+dolor\b"
+)
+_PATRON_SATURACION = re.compile(
+    r"\b(sat|spo2|saturaci[oó]n|ox[ií]geno|oxygen)\b"
+)
+_PATRON_TENSION = re.compile(
+    r"\b(ta|pa|tensi[oó]n|presi[oó]n arterial|blood pressure)\b"
+)
 
 
 class NivelAlerta(Enum):
@@ -27,8 +41,7 @@ class AlertaValidacion:
     sugerencia: str = ""
 
     def __str__(self) -> str:
-        prefix = {"info": "ℹ️", "warning": "⚠️", "error": "❌"}
-        return f"{prefix.get(self.nivel.value, '?')} [{self.campo}] {self.mensaje}"
+        return f"{self.nivel.value.upper()} [{self.campo}] {self.mensaje}"
 
 
 def validar_vector_clinico(
@@ -52,7 +65,10 @@ def validar_vector_clinico(
         if v.presion_sistolica <= v.presion_diastolica:
             alertas.append(AlertaValidacion(
                 campo="presión arterial",
-                mensaje=f"Sistólica ({v.presion_sistolica}) ≤ Diastólica ({v.presion_diastolica}). Posible inversión.",
+                mensaje=(
+                    f"Sistólica ({v.presion_sistolica}) <= "
+                    f"Diastólica ({v.presion_diastolica}). Posible inversión."
+                ),
                 nivel=NivelAlerta.ERROR,
                 sugerencia="Verifique las cifras de PA.",
             ))
@@ -98,12 +114,48 @@ def validar_vector_clinico(
                 nivel=NivelAlerta.WARNING,
             ))
 
+    # 6. Datos mencionados en texto pero no extraidos a campos estructurados
+    if texto:
+        dolor_mencionado = _PATRON_DOLOR.search(texto)
+        dolor_negado = _PATRON_DOLOR_NEGADO.search(texto)
+        if dolor_mencionado and not dolor_negado and v.nivel_dolor is None:
+            alertas.append(AlertaValidacion(
+                campo="nivel_dolor",
+                mensaje="El texto menciona dolor, pero no se extrajo escala 0-10.",
+                nivel=NivelAlerta.INFO,
+                sugerencia="Si aparece una escala EVA/NRS, revise la extraccion.",
+            ))
+
+        if _PATRON_SATURACION.search(texto) and v.saturacion_oxigeno is None:
+            alertas.append(AlertaValidacion(
+                campo="saturacion_oxigeno",
+                mensaje=(
+                    "El texto menciona saturacion/oxigeno, "
+                    "pero no se extrajo SpO2."
+                ),
+                nivel=NivelAlerta.WARNING,
+            ))
+
+        tension_mencionada = _PATRON_TENSION.search(texto)
+        tension_incompleta = (
+            v.presion_sistolica is None or v.presion_diastolica is None
+        )
+        if tension_mencionada and tension_incompleta:
+            alertas.append(AlertaValidacion(
+                campo="presion_arterial",
+                mensaje=(
+                    "El texto menciona TA/PA, "
+                    "pero la presion arterial esta incompleta."
+                ),
+                nivel=NivelAlerta.WARNING,
+            ))
+
     return alertas
 
 
 def resumen_validacion(alertas: list[AlertaValidacion]) -> str:
     if not alertas:
-        return "✅ Sin alertas de validación"
+        return "Sin alertas de validacion"
     n_e = sum(1 for a in alertas if a.nivel == NivelAlerta.ERROR)
     n_w = sum(1 for a in alertas if a.nivel == NivelAlerta.WARNING)
     lines = [f"Validación: {n_e} errores, {n_w} warnings"]

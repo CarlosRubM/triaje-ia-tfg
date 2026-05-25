@@ -4,8 +4,8 @@ from triaje_ia.llm.schemas import VectorClinico
 from triaje_ia.llm.validator import (
     AlertaValidacion,
     NivelAlerta,
-    validar_vector_clinico,
     resumen_validacion,
+    validar_vector_clinico,
 )
 
 
@@ -49,19 +49,58 @@ def test_edad_anciano_inconsistente():
 
 def test_sintomas_vacios_narrativa_larga():
     v = _vector_basico(sintomas_presentes=[])
-    narrativa = "Paciente que acude por dolor torácico de 2 horas de evolución con irradiación"
+    narrativa = (
+        "Paciente que acude por dolor torácico de 2 horas "
+        "de evolución con irradiación"
+    )
     alertas = validar_vector_clinico(v, narrativa=narrativa)
     assert any("síntomas" in a.campo or "sintomas" in a.campo for a in alertas)
 
 
 def test_sexo_incoherente_mujer():
     v = _vector_basico(sexo="M")
-    alertas = validar_vector_clinico(v, narrativa="Mujer de 45 años con dolor abdominal")
+    alertas = validar_vector_clinico(
+        v, narrativa="Mujer de 45 años con dolor abdominal"
+    )
     assert any("sexo" in a.campo for a in alertas)
 
 
+def test_avisa_si_texto_menciona_dolor_sin_escala_extraida():
+    v = _vector_basico(nivel_dolor=None)
+
+    alertas = validar_vector_clinico(v, narrativa="Paciente con dolor toracico intenso")
+
+    assert any(a.campo == "nivel_dolor" for a in alertas)
+
+
+def test_no_avisa_escala_dolor_si_el_dolor_esta_negado():
+    v = _vector_basico(nivel_dolor=None)
+
+    alertas = validar_vector_clinico(
+        v, narrativa="Paciente estable. Niega dolor toracico"
+    )
+
+    assert not any(a.campo == "nivel_dolor" for a in alertas)
+
+
+def test_avisa_si_texto_menciona_saturacion_sin_spo2_extraida():
+    v = _vector_basico(saturacion_oxigeno=None)
+
+    alertas = validar_vector_clinico(v, narrativa="Sat baja segun triaje inicial")
+
+    assert any(a.campo == "saturacion_oxigeno" for a in alertas)
+
+
+def test_avisa_si_texto_menciona_tension_incompleta():
+    v = _vector_basico(presion_sistolica=130, presion_diastolica=None)
+
+    alertas = validar_vector_clinico(v, narrativa="TA tomada en triaje")
+
+    assert any(a.campo == "presion_arterial" for a in alertas)
+
+
 def test_resumen_sin_alertas():
-    assert "✅" in resumen_validacion([])
+    assert resumen_validacion([]) == "Sin alertas de validacion"
 
 
 def test_resumen_con_alertas():
