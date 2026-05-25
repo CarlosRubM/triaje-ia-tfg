@@ -9,11 +9,11 @@ app.py y el resto del código no cambian.
 Flujo:
     TriajePredictor.predict(vector, narrativa)
         └── _build_features()  →  X (DataFrame)
-              ├── adapter 88f → seleccionar 64f tabulares exp5b
-              ├── añadir 3 cols _valor (vitales imputados con medianas train)
+              ├── adapter 88f → seleccionar features tabulares finales
+              ├── añadir columnas _valor si el modelo final las espera
               └── Bio_ClinicalBERT → SVD 15f
         └── clf.predict_proba()
-        └── política de decisión (thresholds Nelder-Mead o threshold_a1)
+        └── decisión final por argmax + alerta A1 si procede
         └── TriajeResult
 """
 
@@ -162,7 +162,9 @@ class TriajePredictor:
         probas = self._clf.predict_proba(x)[0]
 
         clase = int(np.argmax(probas)) + 1
-        threshold_activado = bool(probas[0] >= self._warning_threshold_a1)
+        threshold_activado = bool(
+            clase != 1 and probas[0] >= self._warning_threshold_a1
+        )
 
         alertas: tuple[str, ...] = (
             (self._assumptions["mensaje_ui"],)
@@ -192,11 +194,11 @@ class TriajePredictor:
 
     def _build_features(self, vector: VectorClinico, narrativa: str) -> pd.DataFrame:
         """
-        Construye el vector de 82 features para exp5b+BERT:
-          1. Adapter 88f → seleccionar las features tabulares de exp5b
-          2. Añadir 3 cols _valor (vitales continuos imputados con medianas train)
+        Construye el vector final usado por el modelo congelado:
+          1. Adapter 88f → seleccionar las features tabulares finales.
+          2. Añadir columnas _valor si el modelo las espera.
           3. Bio_ClinicalBERT → SVD 15 cols
-          Orden final = self._feature_names (82 cols exactas del entrenamiento).
+          Orden final = self._feature_names.
         Si self._svd es None (modelo placeholder), devuelve solo las tabulares.
         """
         from triaje_ia.data.features import TODAS_FEATURES
@@ -208,7 +210,7 @@ class TriajePredictor:
         # ── 1. Features tabulares del adapter (88 cols) ──────────────────────
         df_88 = vectorclinico_a_features(vector)
 
-        # Features tabulares exp5b que vienen del adapter (están en TODAS_FEATURES)
+        # Features tabulares finales que vienen del adapter.
         cols_de_adapter = [f for f in self._tabular_features if f in TODAS_FEATURES]
         df = df_88[cols_de_adapter].copy()
 

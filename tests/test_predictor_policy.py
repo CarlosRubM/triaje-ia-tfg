@@ -42,3 +42,12 @@ def test_predictor_no_activa_alerta_a1_si_esta_por_debajo_del_umbral():
 
     assert result.clase_predicha == 2
     assert result.threshold_a1_activado is False
+
+
+def test_predictor_no_muestra_alerta_a1_si_argmax_ya_es_a1():
+    probas = np.array([0.55, 0.30, 0.10, 0.03, 0.02])
+
+    result = crear_predictor_fake(probas).predict(vector=None, narrativa="")
+
+    assert result.clase_predicha == 1
+    assert result.threshold_a1_activado is False

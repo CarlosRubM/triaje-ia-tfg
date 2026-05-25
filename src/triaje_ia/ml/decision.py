@@ -3,7 +3,10 @@ src/triaje_ia/ml/decision.py
 ──────────────────────────────
 Politicas de decision sobre el vector de probabilidades del modelo.
 
-Politica oficial para demo y TFG: threshold_a1
+La configuracion final del TFG usa argmax como decision del modelo y muestra
+una alerta clinica si la probabilidad de A1 supera el umbral elegido.
+
+threshold_a1 se conserva como politica conservadora historica/experimental:
   Si P(acuity=1) >= 0.20 -> asignar acuity 1, independientemente del argmax.
   Justificacion: el coste clinico de un falso negativo en paciente critico
   supera ampliamente el de un falso positivo.
@@ -24,7 +27,7 @@ def argmax(probas: np.ndarray) -> int:
 
 def threshold_a1(probas: np.ndarray, umbral: float = UMBRAL_A1_DEFAULT) -> int:
     """
-    Politica de seguridad clinica para acuity=1 (critico).
+    Politica conservadora historica para acuity=1 (critico).
 
     Si P(acuity=1) >= umbral, devuelve 1 aunque el argmax sea otra clase.
     En caso contrario devuelve el argmax normal.

@@ -270,7 +270,14 @@ html, body,
 
 
 MODELOS_LLM = (
-    ["llama3.2", "qwen2.5", "qwen2.5:7b", "llama3.2:1b", "mistral"]
+    [
+        "llama3.1:8b-instruct-q4_K_M",
+        "llama3.2",
+        "qwen2.5",
+        "qwen2.5:7b",
+        "llama3.2:1b",
+        "mistral",
+    ]
     if LLM_BACKEND == "ollama"
     else ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
 )
@@ -575,6 +582,7 @@ elif st.session_state.ultimo_vector is not None:
     clase_predicha = result.clase_predicha
     confianza = result.confianza
     threshold_activado = result.threshold_a1_activado
+    umbral_alerta_a1 = getattr(predictor, "_warning_threshold_a1", 0.40)
     X = result.X
 
     esi = ESI_CONFIG[clase_predicha]
@@ -590,7 +598,8 @@ elif st.session_state.ultimo_vector is not None:
             </svg>
             <div>
                 <strong>Alerta de seguridad clinica:</strong>
-                P(acuity=1) = {probas_fila[0]:.1%} supera el umbral de aviso.
+                P(acuity=1) = {probas_fila[0]:.1%} supera el umbral de aviso
+                ({umbral_alerta_a1:.0%}).
                 Revisar posible criticidad A1 antes de confirmar el nivel sugerido.
             </div>
         </div>
