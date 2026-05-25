@@ -581,14 +581,14 @@ elif st.session_state.ultimo_vector is not None:
     probas_fila = result.probas
     clase_predicha = result.clase_predicha
     confianza = result.confianza
-    threshold_activado = result.threshold_a1_activado
+    alerta_a1_activada = result.alerta_a1_activada
     umbral_alerta_a1 = getattr(predictor, "_warning_threshold_a1", 0.40)
     X = result.X
 
     esi = ESI_CONFIG[clase_predicha]
 
     # Alerta clinica si la probabilidad de A1 supera el umbral elegido.
-    if threshold_activado:
+    if alerta_a1_activada:
         st.markdown(f"""
         <div class="alert-clinical" style="display:flex; align-items:flex-start; gap:0.6rem;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;">

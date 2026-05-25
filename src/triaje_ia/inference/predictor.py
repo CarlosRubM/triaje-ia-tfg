@@ -83,7 +83,7 @@ class TriajeResult:
     probas: np.ndarray
     clase_predicha: int
     confianza: float
-    threshold_a1_activado: bool
+    alerta_a1_activada: bool
     X: pd.DataFrame
     feature_names: list[str]
     alertas_dominio: tuple[str, ...]
@@ -188,7 +188,7 @@ class TriajePredictor:
         probas = self._clf.predict_proba(x)[0]
 
         clase = int(np.argmax(probas)) + 1
-        threshold_activado = bool(
+        alerta_a1_activada = bool(
             clase != 1 and probas[0] >= self._warning_threshold_a1
         )
 
@@ -202,7 +202,7 @@ class TriajePredictor:
             probas=probas,
             clase_predicha=clase,
             confianza=float(probas[clase - 1]),
-            threshold_a1_activado=threshold_activado,
+            alerta_a1_activada=alerta_a1_activada,
             X=x,
             feature_names=list(x.columns),
             alertas_dominio=alertas,

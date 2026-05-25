@@ -32,7 +32,7 @@ def test_predictor_mantiene_argmax_y_activa_alerta_a1():
     result = crear_predictor_fake(probas).predict(vector=None, narrativa="")
 
     assert result.clase_predicha == 2
-    assert result.threshold_a1_activado is True
+    assert result.alerta_a1_activada is True
 
 
 def test_predictor_no_activa_alerta_a1_si_esta_por_debajo_del_umbral():
@@ -41,7 +41,7 @@ def test_predictor_no_activa_alerta_a1_si_esta_por_debajo_del_umbral():
     result = crear_predictor_fake(probas).predict(vector=None, narrativa="")
 
     assert result.clase_predicha == 2
-    assert result.threshold_a1_activado is False
+    assert result.alerta_a1_activada is False
 
 
 def test_predictor_no_muestra_alerta_a1_si_argmax_ya_es_a1():
@@ -50,4 +50,4 @@ def test_predictor_no_muestra_alerta_a1_si_argmax_ya_es_a1():
     result = crear_predictor_fake(probas).predict(vector=None, narrativa="")
 
     assert result.clase_predicha == 1
-    assert result.threshold_a1_activado is False
+    assert result.alerta_a1_activada is False
