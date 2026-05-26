@@ -1,148 +1,308 @@
-# trIAje — Sistema Híbrido LLM + ML para Triaje de Urgencias
+# trIAje - sistema híbrido LLM + ML para triaje de urgencias
 
-> **Trabajo Fin de Grado** · Grado en Ingeniería Informática · Curso 2024/2025
+Trabajo Fin de Grado del Grado en Ingeniería Informática.
 
-Sistema de apoyo a la decisión clínica (CDSS) que combina un **LLM** para la extracción
-semántica de variables clínicas desde texto libre, con un **modelo ordinal LightGBM**
-entrenado sobre [MIMIC-IV-ED](https://physionet.org/content/mimic-iv-ed/) para predecir
-el nivel de urgencia ESI (1–5).
+Autor: Carlos Rubio  
+Repositorio: [CarlosRubM/triaje-ia-tfg](https://github.com/CarlosRubM/triaje-ia-tfg)
 
-> ⚠️ **Disclaimer ético**: Este sistema es un prototipo académico. **No debe usarse para
-> tomar decisiones clínicas reales**. No ha sido validado externamente ni certificado para
-> uso sanitario.
+Este proyecto desarrolla un prototipo académico de apoyo a la decisión clínica
+para triaje de urgencias. La idea principal es combinar texto libre escrito por
+el usuario con un modelo de machine learning entrenado sobre MIMIC-IV-ED para
+estimar el nivel de urgencia ESI/Acuity de 1 a 5.
 
----
+La escala ESI/Acuity ordena la urgencia de 1 a 5: el nivel 1 representa los
+casos más críticos y el nivel 5 los menos urgentes. Es un problema difícil
+porque las clases están desbalanceadas y porque los pacientes críticos son pocos
+en proporción, pero son los más sensibles desde el punto de vista clínico.
 
-## Arquitectura
+El sistema no está pensado para uso clínico real. Es un trabajo académico y sus
+predicciones deben interpretarse solo como una demostración técnica.
 
-```mermaid
-graph LR
-    texto["Historia Clínica\n(texto libre)"] --> extractor["LLM Extractor\n(Ollama / Groq)"]
-    extractor --> validator["validator.py\nValidación semántica"]
-    validator --> adapter["adapter.py\nVectorClínico → 88 features"]
-    adapter --> pipeline["pipeline.py\nPreprocessor LGBM"]
-    pipeline --> ordinal["OrdinalFrankHall\n4 clasificadores binarios"]
-    ordinal --> decision["decision.py\nthreshold_a1"]
-    ordinal --> shap["explicabilidad.py\nSHAP TreeExplainer"]
-    decision --> ui["app.py\nESI + confianza + waterfall"]
-    shap --> ui
+## Idea general
+
+El flujo completo es:
+
+```text
+Historia clínica en texto libre
+  -> extracción LLM a VectorClinico
+  -> validación y normalización del vector
+  -> conversión a features tabulares
+  -> incorporación de componentes BERT/SVD
+  -> LightGBM final
+  -> predicción ESI + alerta conservadora A1
+  -> explicación SHAP en la interfaz
 ```
 
-### Flujo de datos
+El LLM no decide el nivel de triaje. Su papel es extraer información clínica
+estructurada desde texto libre. La predicción final la realiza un modelo
+LightGBM entrenado y evaluado de forma separada.
 
-1. **Extracción LLM**: El usuario introduce una narrativa clínica. Un LLM (Ollama local o Groq cloud) extrae variables estructuradas (`VectorClínico`).
-2. **Validación**: Se verifican incoherencias semánticas (PA invertida, temperatura vs texto, etc.).
-3. **Adaptación**: `adapter.py` convierte el `VectorClínico` en un DataFrame con las 88 features MIMIC-IV-ED.
-4. **Inferencia**: El modelo `OrdinalFrankHall(LGBMClassifier)` predice `P(acuity=k)` para `k=1..5`.
-5. **Decisión**: Política de seguridad `threshold_a1`: si `P(acuity=1) ≥ 20%`, se asigna ESI 1.
-6. **Explicabilidad**: SHAP waterfall muestra las features más influyentes.
+## Arquitectura del proyecto
 
----
-
-## Estructura del repositorio
-
-```
+```text
 triaje-ia-tfg/
-├── src/triaje_ia/
-│   ├── data/              # loader, cleaner, features (88 features)
-│   ├── ml/                # pipeline, ordinal, inferencia, decision, explicabilidad
-│   ├── llm/               # extractor (Ollama), extractor_api (Groq), factory, validator, schemas
-│   ├── inference/         # adapter (VectorClínico → features MIMIC)
-│   └── ui/                # app.py (Streamlit)
-├── notebooks/
+├── src/triaje_ia/                  # Código fuente del sistema
+│   ├── data/                       # Carga, limpieza y generación de features
+│   ├── llm/                        # Extracción clínica desde texto libre
+│   ├── inference/                  # Adaptador y predictor final
+│   ├── ml/                         # Pipeline ML, decisión y explicabilidad
+│   └── ui/                         # Aplicación Streamlit
+├── notebooks/                      # Desarrollo metodológico del TFG
 │   ├── 1_data_understanding/
 │   ├── 2_data_preparation/
-│   ├── 3_modeling/        # 06_modeling.ipynb (entrenamiento ordinal)
-│   └── 4_evaluation/      # 07_improvements_evaluation.ipynb
-├── models/                # lgbm_ordinal.joblib, MODEL_CARD.md
-├── prompts/               # System prompts para LLM
-├── tests/                 # 46 tests unitarios
-├── pyproject.toml         # Dependencias (uv)
-└── Dockerfile             # Deploy Railway
+│   ├── 3_modeling/
+│   └── 4_evaluation/
+├── prompts/                        # Prompts usados por el extractor LLM
+├── models/                         # Configuración del modelo activo
+├── reports/                        # Resultados y figuras finales
+├── tests/                          # Tests unitarios
+├── pyproject.toml
+└── .env.example
 ```
 
----
+### Código fuente
 
-## Instalación
+| Ruta | Papel |
+|---|---|
+| `src/triaje_ia/config.py` | Define rutas comunes del proyecto. |
+| `src/triaje_ia/data/loader.py` | Carga y unión de tablas de MIMIC-IV-ED. |
+| `src/triaje_ia/data/cleaner.py` | Limpieza del dataset antes del modelado. |
+| `src/triaje_ia/data/features.py` | Generación de las features tabulares base. |
+| `src/triaje_ia/llm/schemas.py` | Esquema Pydantic del `VectorClinico`. |
+| `src/triaje_ia/llm/extractor.py` | Extracción local con Ollama. |
+| `src/triaje_ia/llm/extractor_api.py` | Extracción alternativa mediante API. |
+| `src/triaje_ia/llm/factory.py` | Selección del backend LLM. |
+| `src/triaje_ia/llm/normalizer.py` | Normalización ligera de síntomas y medicación. |
+| `src/triaje_ia/llm/validator.py` | Alertas de coherencia sobre el vector extraído. |
+| `src/triaje_ia/inference/adapter.py` | Conversión de `VectorClinico` a features ML. |
+| `src/triaje_ia/inference/predictor.py` | Carga del modelo final e inferencia. |
+| `src/triaje_ia/ml/pipeline.py` | Pipeline de preprocesado/modelado. |
+| `src/triaje_ia/ml/decision.py` | Políticas de decisión y alerta A1. |
+| `src/triaje_ia/ml/explicabilidad.py` | Explicaciones SHAP. |
+| `src/triaje_ia/ui/app.py` | Aplicación Streamlit. |
 
-### Requisitos previos
+## Notebooks finales
 
-- Python ≥ 3.11
-- [uv](https://docs.astral.sh/uv/) (gestor de paquetes)
-- [Ollama](https://ollama.ai/) (para LLM local) **o** API key de [Groq](https://groq.com/) (para cloud)
+Los notebooks que quedan en el proyecto forman el flujo defendible del TFG:
 
-### Setup
+| Notebook | Rol |
+|---|---|
+| `notebooks/1_data_understanding/01_data_exploration.ipynb` | Exploración inicial del dataset. |
+| `notebooks/1_data_understanding/02_loader_validation.ipynb` | Validación de la carga de datos. |
+| `notebooks/2_data_preparation/03_cleaning_analysis.ipynb` | Análisis de limpieza. |
+| `notebooks/2_data_preparation/04_cleaner_validation.ipynb` | Validación del cleaner. |
+| `notebooks/2_data_preparation/05_feature_engineering.ipynb` | Construcción de features tabulares. |
+| `notebooks/2_data_preparation/05b_feature_validation.ipynb` | Validación y ampliación final de features. |
+| `notebooks/3_modeling/06_nlp_feature_extraction.ipynb` | Features LLM y embeddings BERT/SVD. |
+| `notebooks/3_modeling/07_model_training.ipynb` | Entrenamiento, CV, OOF y congelación del modelo final. |
+| `notebooks/4_evaluation/08_model_evaluation.ipynb` | Evaluación final sobre test temporal. |
+| `notebooks/4_evaluation/09_llm_extraction_validation.ipynb` | Validación local de extracción LLM con casos clínicos. |
+
+Los notebooks históricos de prueba se han retirado de la línea final del
+proyecto para que el repositorio muestre solo el flujo principal.
+
+## Modelo final
+
+La configuración activa está en:
+
+```text
+models/active_model.json
+```
+
+El modelo final es:
+
+```text
+LightGBM + features tabulares finales + componentes BERT/SVD
+```
+
+Artefactos principales:
+
+| Artefacto | Ruta |
+|---|---|
+| Clasificador final | `models/lgbm_bert_final.joblib` |
+| Lista exacta de variables | `models/feature_list.json` |
+| Umbral de alerta y política | `models/thresholds.json` |
+| Metadata de entrenamiento | `models/model_training_metadata.json` |
+| Supuestos de producción | `models/production_assumptions.json` |
+| Reductor BERT/SVD | `data/processed/bert_svd.joblib` |
+
+El modelo usa 79 variables finales. El entrenamiento se realizó sobre train con
+validación cruzada agrupada y predicciones OOF. El test temporal queda reservado
+para la evaluación final del notebook 08.
+
+Las variables finales combinan constantes vitales, flags clínicos derivados,
+medicación y antecedentes, motivo de consulta, variables de llegada y
+componentes semánticos BERT/SVD del texto.
+
+La decisión final de la app usa `argmax`. Además, se muestra una alerta clínica
+conservadora si `P(Acuity 1) >= 0.40` y la clase sugerida no es ESI 1. Esa alerta
+no cambia automáticamente la predicción: sirve como aviso de seguridad.
+
+## Datos usados
+
+El modelado se realiza sobre MIMIC-IV-ED con separación temporal train/test:
+
+| Partición | Episodios |
+|---|---:|
+| Train | 334.480 |
+| Test temporal | 83.620 |
+
+Distribución de clases en el test temporal:
+
+| Clase | Porcentaje |
+|---|---:|
+| Acuity 1 | 5,6 % |
+| Acuity 2 | 33,7 % |
+| Acuity 3 | 54,3 % |
+| Acuity 4 | 6,3 % |
+| Acuity 5 | 0,2 % |
+
+## Resultados principales
+
+Resultados finales sobre test temporal (`n = 83.620`), generados por
+`notebooks/4_evaluation/08_model_evaluation.ipynb`:
+
+| Métrica | Valor |
+|---|---:|
+| Macro F1 | 0.560 |
+| Weighted F1 | 0.697 |
+| Balanced Accuracy | 0.576 |
+| Precision Acuity 1 | 0.658 |
+| Recall Acuity 1 | 0.691 |
+| F1 Acuity 1 | 0.674 |
+| Precision Acuity 2 | 0.665 |
+| Recall Acuity 2 | 0.668 |
+| F1 Acuity 2 | 0.667 |
+| AUPRC Acuity 1 | 0.705 |
+| AUPRC Acuity 2 | 0.726 |
+
+Como referencia interna de desarrollo, el baseline `DummyClassifier`
+estratificado obtuvo una Macro F1 OOF de 0.200, la regresión logística base
+0.372 y LightGBM con las 46 variables base 0.487. El modelo final
+LightGBM+BERT/SVD alcanzó 0.568 en OOF y 0.560 en el test temporal.
+
+Archivos de resultados:
+
+```text
+reports/final_evaluation/final_metrics.json
+reports/final_evaluation/classification_report.csv
+reports/final_evaluation/safety_analysis.csv
+reports/final_evaluation/auprc_metrics.json
+reports/figures/final_evaluation/confusion_matrix.png
+reports/figures/final_evaluation/confusion_matrix_normalized.png
+reports/figures/final_evaluation/shap_summary.png
+```
+
+## Cómo probar el proyecto
+
+### Requisitos
+
+- Python 3.11 o superior
+- `uv`
+- Ollama si se quiere usar extracción local
+- Artefactos del modelo final y datos procesados necesarios
+
+Instalación:
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/<tu-usuario>/triaje-ia-tfg.git
-cd triaje-ia-tfg
-
-# Instalar dependencias
 uv sync
+```
 
-# (Opcional) Instalar dependencias de desarrollo
+Para desarrollo y tests:
+
+```bash
 uv sync --group dev
 ```
 
-### Configurar LLM
+### Configuración del LLM
 
-**Opción A — Ollama local (desarrollo):**
-```bash
-# Instalar Ollama y descargar un modelo
-ollama pull llama3.2
-ollama serve  # dejar corriendo
-```
+El proyecto incluye `.env.example`. Para usar configuración local:
 
-**Opción B — Groq API (cloud / deploy):**
 ```bash
 cp .env.example .env
-# Editar .env con tu GROQ_API_KEY
 ```
 
----
+Backend local recomendado:
 
-## Uso
+```text
+LLM_BACKEND=ollama
+```
 
-### Ejecutar la app Streamlit
+Modelo usado en las pruebas locales:
+
+```bash
+ollama pull llama3.1:8b-instruct-q4_K_M
+ollama serve
+```
+
+También existe backend API (`LLM_BACKEND=api`) preparado para Groq/OpenAI, pero
+la vía local con Ollama es la opción principal para este prototipo.
+
+### Ejecutar la aplicación
 
 ```bash
 uv run streamlit run src/triaje_ia/ui/app.py
 ```
 
-### Ejecutar los tests
+Para que la app funcione deben existir:
+
+```text
+models/lgbm_bert_final.joblib
+models/active_model.json
+models/feature_list.json
+models/thresholds.json
+models/model_training_metadata.json
+models/production_assumptions.json
+data/processed/bert_svd.joblib
+```
+
+Los JSON de configuración sí están pensados para ir en el repositorio. El modelo
+`.joblib` y los artefactos pesados de `data/processed/` deben aportarse aparte
+si se clona el proyecto desde cero.
+
+### Ejecutar tests
 
 ```bash
 uv run pytest tests/ -v
 ```
 
-### Entrenar el modelo (requiere MIMIC-IV-ED)
+## Qué incluye y qué no incluye Git
 
-1. Seguir los notebooks `01` a `05` para preparar los datos.
-2. Ejecutar `notebooks/3_modeling/06_modeling.ipynb` para entrenar y exportar `models/lgbm_ordinal.joblib`.
+Se versionan:
 
----
+- código fuente
+- notebooks finales
+- tests
+- prompts
+- JSON pequeños de configuración del modelo
+- métricas y figuras finales de evaluación
 
-## Modelo
+No se versionan:
 
-- **Arquitectura**: `OrdinalFrankHall(LGBMClassifier)` — 4 clasificadores binarios (Frank & Hall, 2001).
-- **Features**: 88 variables derivadas de signos vitales, datos demográficos, medicación, chief complaint, historial ED y comorbilidades CCS.
-- **Dataset**: MIMIC-IV-ED (Medical Information Mart for Intensive Care, Emergency Department).
-- **Política de seguridad**: `threshold_a1` — si `P(acuity=1) ≥ 0.20`, se asigna ESI 1 independientemente del argmax.
+- datos originales de MIMIC-IV-ED
+- parquets intermedios pesados
+- caches de BERT/LLM
+- modelos `.joblib`
+- archivos `.env`
+- material histórico archivado antes de la entrega
 
-Ver [`models/MODEL_CARD.md`](models/MODEL_CARD.md) para métricas y limitaciones.
+Esto evita subir datos o binarios pesados y mantiene el repositorio centrado en
+el código, la metodología y los resultados finales.
 
----
+## Limitaciones
 
-## Limitaciones conocidas
+- El sistema es académico y no debe usarse para decisiones clínicas reales.
+- El entrenamiento se basa en MIMIC-IV-ED, por lo que puede existir diferencia
+  entre el entorno de entrenamiento y el uso sobre texto libre en la app.
+- La extracción LLM puede cometer errores u omisiones, aunque se aplican reglas
+  de validación y normalización.
+- Algunas variables históricas de urgencias no están disponibles en producción
+  desde texto libre y se imputan con supuestos conservadores documentados.
+- La explicación SHAP es descriptiva; no sustituye la valoración clínica.
 
-- `ccs_category` se extrae de diagnósticos registrados durante o tras el episodio (data leakage temporal).
-- Las regex de chief complaint están calibradas para el vocabulario de MIMIC-IV-ED (inglés).
-- En producción, el historial ED del paciente no está disponible — se usan defaults conservadores.
-- El modelo no ha sido validado externamente en poblaciones distintas a MIMIC-IV-ED.
+## Autoría
 
----
+Proyecto desarrollado por Carlos Rubio como Trabajo Fin de Grado.
 
-## Licencia
-
-Proyecto académico — TFG curso 2024/2025.
+Dataset de referencia: MIMIC-IV-ED, sujeto a las condiciones de acceso y uso de
+PhysioNet.
