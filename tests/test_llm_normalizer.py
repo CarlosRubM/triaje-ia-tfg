@@ -41,4 +41,24 @@ def test_normaliza_medicacion_a_clase_terapeutica_basica():
 
     normalizado = normalizar_vector_clinico(vector)
 
-    assert normalizado.medicacion_habitual == ["biguanides", "antiplatelet agents"]
+    assert normalizado.medicacion_habitual == ["biguanides", "salicylate analgesics"]
+
+
+def test_normaliza_medicacion_a_patrones_usados_por_features():
+    vector = _vector(
+        medicacion_habitual=[
+            "Sintrom",
+            "Furosemida",
+            "Insulina",
+            "Clopidogrel",
+        ]
+    )
+
+    normalizado = normalizar_vector_clinico(vector)
+
+    assert normalizado.medicacion_habitual == [
+        "anticoagulants - coumarin",
+        "diuretic - loop",
+        "insulin analogs",
+        "thienopyridine",
+    ]

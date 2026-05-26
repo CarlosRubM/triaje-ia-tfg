@@ -25,6 +25,15 @@ _PATRON_SATURACION = re.compile(
 _PATRON_TENSION = re.compile(
     r"\b(ta|pa|tensi[oó]n|presi[oó]n arterial|blood pressure)\b"
 )
+_PATRON_ACOMPANANTE = re.compile(
+    r"\b(acompañad[oa]|acompanad[oa])\s+(por\s+)?(su\s+)?"
+    r"(mujer|esposa|marido|esposo|pareja)\b"
+)
+_PATRON_POSESIVO_ACOMPANANTE = re.compile(
+    r"\bsu\s+(mujer|esposa|marido|esposo|pareja)\b"
+)
+_PATRON_MUJER = re.compile(r"\b(mujer|female|femenina|embarazada)\b")
+_PATRON_HOMBRE = re.compile(r"\b(var[oó]n|hombre|male|masculino)\b")
 
 
 class NivelAlerta(Enum):
@@ -42,6 +51,11 @@ class AlertaValidacion:
 
     def __str__(self) -> str:
         return f"{self.nivel.value.upper()} [{self.campo}] {self.mensaje}"
+
+
+def _texto_para_validar_sexo(texto: str) -> str:
+    texto = _PATRON_ACOMPANANTE.sub(" ", texto)
+    return _PATRON_POSESIVO_ACOMPANANTE.sub(" ", texto)
 
 
 def validar_vector_clinico(
@@ -101,8 +115,9 @@ def validar_vector_clinico(
 
     # 5. Sexo incoherente
     if texto:
-        mujer = any(m in texto for m in ["mujer", "female", "embarazada"])
-        hombre = any(m in texto for m in ["varón", "hombre", "male"])
+        texto_sexo = _texto_para_validar_sexo(texto)
+        mujer = _PATRON_MUJER.search(texto_sexo) is not None
+        hombre = _PATRON_HOMBRE.search(texto_sexo) is not None
         if mujer and not hombre and v.sexo == "M":
             alertas.append(AlertaValidacion(
                 campo="sexo", mensaje="Texto sugiere femenina pero sexo=M.",

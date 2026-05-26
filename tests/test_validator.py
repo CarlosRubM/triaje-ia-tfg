@@ -65,6 +65,20 @@ def test_sexo_incoherente_mujer():
     assert any("sexo" in a.campo for a in alertas)
 
 
+def test_no_confunde_mujer_acompanante_con_sexo_del_paciente():
+    v = _vector_basico(sexo="M")
+
+    alertas = validar_vector_clinico(
+        v,
+        narrativa=(
+            "Varón de 67 años que acude acompañado por su mujer "
+            "por dolor torácico."
+        ),
+    )
+
+    assert not any(a.campo == "sexo" for a in alertas)
+
+
 def test_avisa_si_texto_menciona_dolor_sin_escala_extraida():
     v = _vector_basico(nivel_dolor=None)
 
