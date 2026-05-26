@@ -1,0 +1,30 @@
+{
+  "features_imputadas": [
+    "n_visitas_previas",
+    "visitas_ultimo_mes",
+    "visitas_ultimo_año",
+    "dias_desde_ultima_visita",
+    "primera_visita",
+    "frecuentador",
+    "hx_cardiaco",
+    "hx_respiratorio",
+    "hx_neuro",
+    "hx_psiquiatrico",
+    "hx_abuso_sustancias",
+    "hx_digestivo",
+    "hx_metabolico_renal",
+    "hx_infeccioso",
+    "hx_trauma_muscular"
+  ],
+  "defaults": {
+    "n_visitas_previas": 0,
+    "primera_visita": 1,
+    "dias_desde_ultima_visita": null
+  },
+  "mensaje_ui": "Historial ED no disponible; bloque 6 imputado a valores conservadores.",
+  "imputation_medians": {
+    "temperature_valor": 98.0,
+    "heartrate_valor": 84.0,
+    "dbp_valor": 77.0
+  }
+}

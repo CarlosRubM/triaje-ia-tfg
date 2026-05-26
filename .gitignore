@@ -3,6 +3,11 @@
 __pycache__/
 *.pyc
 *.pyo
+.ruff_cache/
+.pytest_cache/
+
+# Cuarentena pre-entrega
+_archive_before_delivery/
 
 # Datos sensibles (NUNCA subir a GitHub)
 data/raw/
@@ -16,7 +21,11 @@ data/processed/
 models/*.pkl
 models/*.joblib
 models/*.json
-!models/mejores_parametros_lightgbm.json
+!models/active_model.json
+!models/feature_list.json
+!models/thresholds.json
+!models/model_training_metadata.json
+!models/production_assumptions.json
 
 # Variables de entorno
 .env
@@ -25,6 +34,7 @@ models/*.json
 # IDEs
 .vscode/settings.json
 .idea/
+.cursor/
 *.DS_Store
 
 # Logs
@@ -38,16 +48,13 @@ GUIA_*.md
 docs/
 
 # Artefactos generados en notebooks (regenerables)
+artifacts/
 notebooks/**/*.png
 notebooks/**/*.pkl
 notebooks/**/*.json
 notebooks/catboost_info/
 **/.ipynb_checkpoints/
 catboost_info/
-
-# Planes internos de Cursor (contexto de trabajo local)
-.cursor/plans/
-.cursor/CHECKLIST_CODIGO.md
 
 # CodeGraph
 .codegraph/
