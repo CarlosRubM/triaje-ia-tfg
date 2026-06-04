@@ -201,7 +201,8 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
     """
     Scores clínicos compuestos vectorizados.
     NEWS2 implementado con np.select (validado, H idéntico al iterativo).
-    qSOFA usa pain_missing como proxy de alteración del nivel de consciencia.
+    MIMIC-IV-ED no registra GCS/AVPU estructurado en triaje; el componente
+    neurológico se omite para no introducir proxies AMS sesgados.
     """
     df = df.copy()
 
@@ -235,8 +236,6 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
         [np.isnan(tmp), tmp <= 95.0, tmp <= 96.8, tmp <= 100.4, tmp <= 102.2],
         [0, 3, 1, 0, 1], default=2
     )
-    score += np.where(df["pain_missing"].values == 1, 3, 0)
-
     df["news2"]      = score
     df["news2_alto"] = (score >= UMBRAL_NEWS2_ALTO).astype("int8")
 
@@ -244,7 +243,6 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
     qsofa = np.zeros(len(df))
     qsofa += np.where(np.nan_to_num(rr) >= 22, 1, 0)
     qsofa += np.where(np.nan_to_num(sbp) <= 100, 1, 0)
-    qsofa += df["pain_missing"].values  # proxy AMS
 
     df["qsofa"]          = qsofa
     df["qsofa_positivo"] = (qsofa >= 2).astype("int8")
