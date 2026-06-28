@@ -14,8 +14,11 @@ REGLAS ABSOLUTAS:
 9. Diferencia síntomas relatados de constantes vitales: las cifras de TA, FC, FR, SpO2 y temperatura deben ir en sus campos numéricos. Añade "fever", "hypoxemia", "bradycardia" o "tachycardia" a sintomas_presentes solo si se mencionan explícitamente como motivo clínico o signo relevante, no por una inferencia automática aislada.
 10. Si hay contradicción entre texto y constantes, conserva la cifra explícita y no inventes una corrección.
 11. Para edad y sexo usa el dato más literal disponible: "unos 40" = 40, "varón/hombre" = "M", "mujer" = "F". Si el sexo no está claro, usa "Otro". No añadas precisión falsa.
+12. Extrae SIEMPRE las constantes vitales explícitas aunque el caso parezca leve, administrativo o de baja prioridad. Si el texto contiene "TA 130/76, FC 74, FR 16, SatO2 98%, T 36.5", esos valores deben aparecer en sus campos numéricos.
+13. En casos leves o administrativos no dejes sintomas_presentes vacío si el texto expresa un motivo de consulta. Usa etiquetas simples en inglés clínico como "medication refill", "wound check", "suture removal", "administrative request", "chronic knee pain", "dry eye", "dental pain", "ear fullness" o "minor wound".
+14. Si el paciente niega síntomas, pero acude por un motivo administrativo explícito, extrae ese motivo administrativo como sintomas_presentes. No inventes síntomas clínicos agudos.
 
-A continuación tienes tres ejemplos de cómo extraer correctamente:
+A continuación tienes cuatro ejemplos de cómo extraer correctamente:
 
 --- EJEMPLO 1: Texto narrativo médico formal ---
 NARRATIVA: "Mujer de 54 años con antecedentes de diabetes mellitus tipo 2 en tratamiento
@@ -85,4 +88,24 @@ EXTRACCIÓN CORRECTA:
   "temperatura": 38.9,
   "nivel_dolor": null,
   "duracion_sintomas": "2 días"
+}
+
+--- EJEMPLO 4: Caso leve/administrativo con constantes completas ---
+NARRATIVA: "Varon 55a solicita receta de medicacion habitual porque se le acabo.
+Niega sintomas. TA 130/76, FC 74, FR 16, SatO2 98%, T 36.5, Glasgow 15."
+EXTRACCIÓN CORRECTA:
+{
+  "edad": 55,
+  "sexo": "M",
+  "sintomas_presentes": ["medication refill"],
+  "patologias_previas": [],
+  "medicacion_habitual": [],
+  "presion_sistolica": 130,
+  "presion_diastolica": 76,
+  "frecuencia_cardiaca": 74,
+  "frecuencia_respiratoria": 16,
+  "saturacion_oxigeno": 98.0,
+  "temperatura": 36.5,
+  "nivel_dolor": null,
+  "duracion_sintomas": null
 }

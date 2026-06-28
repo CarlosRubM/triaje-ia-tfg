@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+import unicodedata
+
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Literal
 
 
@@ -30,3 +32,42 @@ class VectorClinico(BaseModel):
 
     nivel_dolor: Optional[int] = Field(None, ge=0, le=10, description="Escala 0-10")
     duracion_sintomas: Optional[str] = Field(None, description="Tiempo de evolución")
+    metodo_llegada: Literal[
+        "ambulancia",
+        "helicoptero",
+        "autonomo",
+        "otro",
+        "desconocido",
+    ] = Field(
+        "desconocido",
+        description="Metodo de llegada a urgencias si se menciona en la narrativa",
+    )
+
+    @field_validator("metodo_llegada", mode="before")
+    @classmethod
+    def normalizar_metodo_llegada(cls, value: object) -> str:
+        if value is None or value == "":
+            return "desconocido"
+        texto = unicodedata.normalize("NFKD", str(value).strip().lower())
+        texto = "".join(c for c in texto if not unicodedata.combining(c))
+        equivalencias = {
+            "ambulance": "ambulancia",
+            "ambulancia": "ambulancia",
+            "uvi movil": "ambulancia",
+            "samu": "ambulancia",
+            "061": "ambulancia",
+            "ems": "ambulancia",
+            "helicopter": "helicoptero",
+            "helicoptero": "helicoptero",
+            "hems": "helicoptero",
+            "heli": "helicoptero",
+            "walk in": "autonomo",
+            "autonomo": "autonomo",
+            "por sus medios": "autonomo",
+            "coche propio": "autonomo",
+            "other": "otro",
+            "otro": "otro",
+            "unknown": "desconocido",
+            "desconocido": "desconocido",
+        }
+        return equivalencias.get(texto, texto)

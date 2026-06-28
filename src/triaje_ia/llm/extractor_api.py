@@ -13,7 +13,7 @@ import os
 
 from loguru import logger
 
-from triaje_ia.llm.extractor import SYSTEM_PROMPT
+from triaje_ia.llm.extractor import SYSTEM_PROMPT, _completar_datos_explicitos
 from triaje_ia.llm.normalizer import normalizar_vector_clinico
 from triaje_ia.llm.schemas import VectorClinico
 
@@ -109,6 +109,7 @@ def extraer_vector_clinico_api(
     content = data["choices"][0]["message"]["content"]
 
     vector = normalizar_vector_clinico(VectorClinico.model_validate_json(content))
+    vector = normalizar_vector_clinico(_completar_datos_explicitos(narrativa, vector))
     logger.success(
         f"Extracción API completada: {len(vector.sintomas_presentes)} síntomas"
     )

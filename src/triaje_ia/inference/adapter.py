@@ -19,10 +19,10 @@ Mapeo de campos:
   sintomas_presentes       -> chiefcomplaint (join con coma)
   medicacion_habitual      -> medicacion_raw (join con coma, lowercase)
   len(medicacion_habitual) -> n_medicamentos
+  metodo_llegada          -> arrival_transport
 
 Defaults para campos sin equivalente en VectorClinico:
   race               = UNKNOWN  (sin datos demograficos de raza)
-  arrival_transport  = UNKNOWN  (modo de llegada desconocido)
   Bloque 6 (historial ED): defaults conservadores para frecuentacion
     - primera_visita  = 1 (asumimos primera visita)
     - n_visitas_previas, visitas_ultimo_mes, visitas_ultimo_ano = 0
@@ -53,6 +53,14 @@ from triaje_ia.data.features import (
 from triaje_ia.llm.schemas import VectorClinico
 
 _SEXO_MAP = {"M": "M", "F": "F", "Otro": "M"}
+
+_LLEGADA_MAP = {
+    "ambulancia": "AMBULANCE",
+    "helicoptero": "HELICOPTER",
+    "autonomo": "WALK IN",
+    "otro": "OTHER",
+    "desconocido": "UNKNOWN",
+}
 
 _PATRONES_HX_TEXTO = {
     "hx_cardiaco": re.compile(
@@ -125,6 +133,10 @@ def _mapear_sexo(sexo: str) -> str:
     return _SEXO_MAP.get(sexo, "M")
 
 
+def _mapear_metodo_llegada(metodo_llegada: str | None) -> str:
+    return _LLEGADA_MAP.get(metodo_llegada or "desconocido", "UNKNOWN")
+
+
 def vectorclinico_a_features(v: VectorClinico) -> pd.DataFrame:
     """
     Convierte un VectorClinico extraido por el LLM en un DataFrame de 88 features.
@@ -150,7 +162,7 @@ def vectorclinico_a_features(v: VectorClinico) -> pd.DataFrame:
         "age":               v.edad,
         "gender":            _mapear_sexo(v.sexo),
         "race":              "UNKNOWN",
-        "arrival_transport": "UNKNOWN",
+        "arrival_transport": _mapear_metodo_llegada(v.metodo_llegada),
         "heartrate":         v.frecuencia_cardiaca,
         "resprate":          v.frecuencia_respiratoria,
         "o2sat":             v.saturacion_oxigeno,

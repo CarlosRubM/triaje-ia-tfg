@@ -41,6 +41,17 @@ def test_fiebre_con_texto_afebril():
                for a in alertas)
 
 
+def test_no_avisa_temperatura_si_fiebre_esta_negada():
+    v = _vector_basico(temperatura=None)
+
+    alertas = validar_vector_clinico(
+        v,
+        narrativa="Caida con herida sangrante. Niega dolor toracico y fiebre.",
+    )
+
+    assert not any(a.campo == "temperatura" for a in alertas)
+
+
 def test_edad_anciano_inconsistente():
     v = _vector_basico(edad=25)
     alertas = validar_vector_clinico(v, narrativa="Anciano de 25 años")
@@ -111,6 +122,33 @@ def test_avisa_si_texto_menciona_tension_incompleta():
     alertas = validar_vector_clinico(v, narrativa="TA tomada en triaje")
 
     assert any(a.campo == "presion_arterial" for a in alertas)
+
+
+def test_avisa_si_constantes_mencionadas_no_se_extraen():
+    v = _vector_basico(
+        presion_sistolica=None,
+        presion_diastolica=None,
+        frecuencia_cardiaca=None,
+        frecuencia_respiratoria=None,
+        saturacion_oxigeno=None,
+        temperatura=None,
+    )
+
+    alertas = validar_vector_clinico(
+        v,
+        narrativa=(
+            "TA 130/76, FC 74, FR 16, SatO2 98%, "
+            "T 36.5, Glasgow 15"
+        ),
+    )
+
+    campos = {a.campo for a in alertas}
+    assert "frecuencia_cardiaca" in campos
+    assert "frecuencia_respiratoria" in campos
+    assert "saturacion_oxigeno" in campos
+    assert "temperatura" in campos
+    assert "presion_arterial" in campos
+    assert "vector_incompleto" in campos
 
 
 def test_resumen_sin_alertas():

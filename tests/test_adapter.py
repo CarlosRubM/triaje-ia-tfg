@@ -1,6 +1,10 @@
-import numpy as np
 import pytest
-from triaje_ia.inference.adapter import _celsius_a_fahrenheit, _mapear_sexo, vectorclinico_a_features
+from triaje_ia.inference.adapter import (
+    _celsius_a_fahrenheit,
+    _mapear_metodo_llegada,
+    _mapear_sexo,
+    vectorclinico_a_features,
+)
 from triaje_ia.data.features import TODAS_FEATURES
 from triaje_ia.llm.schemas import VectorClinico
 
@@ -25,6 +29,21 @@ def test_mapear_sexo_otro_conservador():
     assert _mapear_sexo("Otro") == "M"
 
 
+@pytest.mark.parametrize(
+    ("metodo", "esperado"),
+    [
+        ("ambulancia", "AMBULANCE"),
+        ("helicoptero", "HELICOPTER"),
+        ("autonomo", "WALK IN"),
+        ("otro", "OTHER"),
+        ("desconocido", "UNKNOWN"),
+        (None, "UNKNOWN"),
+    ],
+)
+def test_mapear_metodo_llegada(metodo, esperado):
+    assert _mapear_metodo_llegada(metodo) == esperado
+
+
 def test_vectorclinico_a_features_produce_88_columnas():
     v = VectorClinico(
         edad=45,
@@ -38,10 +57,13 @@ def test_vectorclinico_a_features_produce_88_columnas():
         saturacion_oxigeno=97.0,
         temperatura=37.0,
         nivel_dolor=5,
+        metodo_llegada="ambulancia",
     )
     df = vectorclinico_a_features(v)
     assert list(df.columns) == TODAS_FEATURES
     assert len(df) == 1
+    assert df["llegada_ambulancia"].iloc[0] == 1
+    assert df["llegada_desconocida"].iloc[0] == 0
 
 
 def test_vectorclinico_a_features_sin_vitales():

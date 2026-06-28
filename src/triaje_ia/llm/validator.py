@@ -20,10 +20,19 @@ _PATRON_DOLOR_NEGADO = re.compile(
     r"\b(niega|no refiere|sin|ausencia de)\s+dolor\b"
 )
 _PATRON_SATURACION = re.compile(
-    r"\b(sat|spo2|saturaci[oó]n|ox[ií]geno|oxygen)\b"
+    r"\b(sat(?:o2)?|spo2|saturaci[oó]n|ox[ií]geno|oxygen)\b"
 )
 _PATRON_TENSION = re.compile(
     r"\b(ta|pa|tensi[oó]n|presi[oó]n arterial|blood pressure)\b"
+)
+_PATRON_FC = re.compile(
+    r"\b(fc|pulso|frecuencia cardiaca|heart rate)\b"
+)
+_PATRON_FR = re.compile(
+    r"\b(fr|frecuencia respiratoria|respiraci[oó]n|respiratory rate)\b"
+)
+_PATRON_TEMPERATURA = re.compile(
+    r"\b(tª|t|temp|temperatura|fiebre|temperature)\b"
 )
 _PATRON_ACOMPANANTE = re.compile(
     r"\b(acompañad[oa]|acompanad[oa])\s+(por\s+)?(su\s+)?"
@@ -34,6 +43,22 @@ _PATRON_POSESIVO_ACOMPANANTE = re.compile(
 )
 _PATRON_MUJER = re.compile(r"\b(mujer|female|femenina|embarazada)\b")
 _PATRON_HOMBRE = re.compile(r"\b(var[oó]n|hombre|male|masculino)\b")
+
+
+def _temperatura_afirmada(texto: str) -> bool:
+    if not _PATRON_TEMPERATURA.search(texto):
+        return False
+    if re.search(r"\bniega\b[^.]{0,80}\bfiebre\b", texto):
+        return False
+    negaciones = [
+        "afebril",
+        "sin fiebre",
+        "niega fiebre",
+        "no fiebre",
+        "no presenta fiebre",
+        "no refiere fiebre",
+    ]
+    return not any(negacion in texto for negacion in negaciones)
 
 
 class NivelAlerta(Enum):
@@ -151,6 +176,37 @@ def validar_vector_clinico(
                 nivel=NivelAlerta.WARNING,
             ))
 
+        if _PATRON_FC.search(texto) and v.frecuencia_cardiaca is None:
+            alertas.append(AlertaValidacion(
+                campo="frecuencia_cardiaca",
+                mensaje=(
+                    "El texto menciona FC/pulso, "
+                    "pero no se extrajo frecuencia cardiaca."
+                ),
+                nivel=NivelAlerta.WARNING,
+            ))
+
+        if _PATRON_FR.search(texto) and v.frecuencia_respiratoria is None:
+            alertas.append(AlertaValidacion(
+                campo="frecuencia_respiratoria",
+                mensaje=(
+                    "El texto menciona FR/respiracion, "
+                    "pero no se extrajo frecuencia respiratoria."
+                ),
+                nivel=NivelAlerta.WARNING,
+            ))
+
+        temperatura_afirmada = _temperatura_afirmada(texto)
+        if temperatura_afirmada and v.temperatura is None:
+            alertas.append(AlertaValidacion(
+                campo="temperatura",
+                mensaje=(
+                    "El texto menciona temperatura/fiebre, "
+                    "pero no se extrajo temperatura."
+                ),
+                nivel=NivelAlerta.WARNING,
+            ))
+
         tension_mencionada = _PATRON_TENSION.search(texto)
         tension_incompleta = (
             v.presion_sistolica is None or v.presion_diastolica is None
@@ -163,6 +219,31 @@ def validar_vector_clinico(
                     "pero la presion arterial esta incompleta."
                 ),
                 nivel=NivelAlerta.WARNING,
+            ))
+
+        constantes_mencionadas = [
+            tension_mencionada is not None,
+            _PATRON_FC.search(texto) is not None,
+            _PATRON_FR.search(texto) is not None,
+            _PATRON_SATURACION.search(texto) is not None,
+            temperatura_afirmada,
+        ]
+        constantes_extraidas = [
+            v.presion_sistolica is not None and v.presion_diastolica is not None,
+            v.frecuencia_cardiaca is not None,
+            v.frecuencia_respiratoria is not None,
+            v.saturacion_oxigeno is not None,
+            v.temperatura is not None,
+        ]
+        if sum(constantes_mencionadas) >= 3 and sum(constantes_extraidas) <= 1:
+            alertas.append(AlertaValidacion(
+                campo="vector_incompleto",
+                mensaje=(
+                    "El texto contiene varias constantes, "
+                    "pero el vector extraido esta muy incompleto."
+                ),
+                nivel=NivelAlerta.WARNING,
+                sugerencia="Revise la extraccion antes de interpretar la prediccion.",
             ))
 
     return alertas
