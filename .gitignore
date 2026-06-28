@@ -9,23 +9,34 @@ __pycache__/
 # Cuarentena pre-entrega
 _archive_before_delivery/
 
+# Laboratorio local de graficas (no versionar)
+figures_lab_local/
+
 # Datos sensibles (NUNCA subir a GitHub)
 data/raw/
 data/interim/
-data/processed/
+data/processed/*
+!data/processed/bert_svd.joblib
 *.csv
 *.parquet
 *.feather
+
+# Resultados tabulares pequenos usados en la memoria
+!reports/chapter8_case_studies/*.csv
+!reports/final_evaluation/shap_importancia_global_top_features.csv
+!reports/final_evaluation/shap_importancia_por_clase.csv
 
 # Modelos serializados grandes
 models/*.pkl
 models/*.joblib
 models/*.json
+!models/lgbm_bert_final.joblib
 !models/active_model.json
 !models/feature_list.json
 !models/thresholds.json
 !models/model_training_metadata.json
 !models/production_assumptions.json
+!models/artifact_manifest.json
 
 # Variables de entorno
 .env
@@ -35,11 +46,15 @@ models/*.json
 .vscode/settings.json
 .idea/
 .cursor/
+.codex-remote-attachments/
 *.DS_Store
 
 # Logs
 *.log
 logs/
+**/smoke_*/
+**/audit_cache.jsonl
+reports/hyperparameter_tuning/*.db
 
 # Guias locales de trabajo con IA (no publicar)
 GUIA_CONTEXTO_IA.md
