@@ -1,257 +1,296 @@
-# trIAje - sistema híbrido LLM + ML para triaje de urgencias
+<div align="center">
 
-Trabajo Fin de Grado del Grado en Ingeniería Informática.
+# trIAje
 
-Autor: Carlos Rubio  
-Repositorio: [CarlosRubM/triaje-ia-tfg](https://github.com/CarlosRubM/triaje-ia-tfg)
+### Sistema de gestión de emergencias en hospitales
 
-Este proyecto desarrolla un prototipo académico de apoyo a la decisión clínica
-para triaje de urgencias. La idea principal es combinar texto libre escrito por
-el usuario con un modelo de machine learning entrenado sobre MIMIC-IV-ED para
-estimar el nivel de urgencia ESI/Acuity de 1 a 5.
+**Trabajo Fin de Grado — Ingeniería Informática**<br>
+Escuela Superior de Ingeniería Informática de Albacete · Universidad de Castilla-La Mancha
 
-La escala ESI/Acuity ordena la urgencia de 1 a 5: el nivel 1 representa los
-casos más críticos y el nivel 5 los menos urgentes. Es un problema difícil
-porque las clases están desbalanceadas y porque los pacientes críticos son pocos
-en proporción, pero son los más sensibles desde el punto de vista clínico.
+**Carlos Rubio Martínez · Junio de 2026**
 
-El sistema no está pensado para uso clínico real. Es un trabajo académico y sus
-predicciones deben interpretarse solo como una demostración técnica.
+Dirección: María Emilia Cambronero Piqueras<br>
+Codirección: Manuel Fernández Ferrando y David Cebrian
 
-## Idea general
+</div>
 
-El flujo completo es:
+> **Prototipo académico de apoyo a la decisión.** No es un producto sanitario ni
+> debe utilizarse para tomar decisiones clínicas reales.
 
-```text
-Historia clínica en texto libre
-  -> extracción LLM a VectorClinico
-  -> validación y normalización del vector
-  -> conversión a features tabulares
-  -> incorporación de componentes BERT/SVD
-  -> LightGBM final
-  -> predicción ESI + alerta conservadora A1
-  -> explicación SHAP en la interfaz
-```
+`trIAje` estudia cómo combinar modelos de lenguaje y aprendizaje automático para
+apoyar la clasificación inicial de pacientes en urgencias. A partir de la
+información introducida por el usuario, el sistema construye un registro clínico
+estructurado, permite revisarlo y estima una distribución de probabilidad sobre
+los cinco niveles ESI/Acuity.
 
-El LLM no decide el nivel de triaje. Su papel es extraer información clínica
-estructurada desde texto libre. La predicción final la realiza un modelo
-LightGBM entrenado y evaluado de forma separada.
+El modelo de lenguaje no decide el nivel de triaje. Su función es transformar el
+relato clínico en variables revisables. La predicción la realiza un modelo
+LightGBM entrenado sobre MIMIC-IV-ED, y la interfaz muestra tanto la distribución
+de probabilidades como los principales factores SHAP del resultado.
 
-## Arquitectura del proyecto
+## Contenido
 
-```text
-triaje-ia-tfg/
-├── src/triaje_ia/                  # Código fuente del sistema
-│   ├── data/                       # Carga, limpieza y generación de features
-│   ├── llm/                        # Extracción clínica desde texto libre
-│   ├── inference/                  # Adaptador y predictor final
-│   ├── ml/                         # Pipeline ML, decisión y explicabilidad
-│   └── ui/                         # Aplicación Streamlit
-├── notebooks/                      # Desarrollo metodológico del TFG
-│   ├── 1_data_understanding/
-│   ├── 2_data_preparation/
-│   ├── 3_modeling/
-│   └── 4_evaluation/
-├── prompts/                        # Prompts usados por el extractor LLM
-├── models/                         # Configuración del modelo activo
-├── artifacts/                      # Métricas y figuras de selección de características
-├── reports/                        # Resultados y figuras finales
-├── tests/                          # Tests unitarios
-├── pyproject.toml
-└── .env.example
-```
+- [Qué aporta el proyecto](#qué-aporta-el-proyecto)
+- [Aplicación](#aplicación)
+- [Funcionamiento](#funcionamiento)
+- [Metodología](#metodología)
+- [Resultados](#resultados)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Reproducir el proyecto](#reproducir-el-proyecto)
+- [Notebooks y trazabilidad](#notebooks-y-trazabilidad)
+- [Alcance y uso responsable](#alcance-y-uso-responsable)
 
-### Código fuente
+## Qué aporta el proyecto
 
-| Ruta | Papel |
-|---|---|
-| `src/triaje_ia/config.py` | Define rutas comunes del proyecto. |
-| `src/triaje_ia/data/loader.py` | Carga y unión de tablas de MIMIC-IV-ED. |
-| `src/triaje_ia/data/cleaner.py` | Limpieza del dataset antes del modelado. |
-| `src/triaje_ia/data/features.py` | Generación de las features tabulares base. |
-| `src/triaje_ia/llm/schemas.py` | Esquema Pydantic del `VectorClinico`. |
-| `src/triaje_ia/llm/extractor.py` | Extracción local con Ollama. |
-| `src/triaje_ia/llm/extractor_api.py` | Extracción alternativa mediante API. |
-| `src/triaje_ia/llm/factory.py` | Selección del backend LLM. |
-| `src/triaje_ia/llm/normalizer.py` | Normalización ligera de síntomas y medicación. |
-| `src/triaje_ia/llm/validator.py` | Alertas de coherencia sobre el vector extraído. |
-| `src/triaje_ia/inference/adapter.py` | Conversión de `VectorClinico` a features ML. |
-| `src/triaje_ia/inference/predictor.py` | Carga del modelo final e inferencia. |
-| `src/triaje_ia/ml/pipeline.py` | Pipeline de preprocesado/modelado. |
-| `src/triaje_ia/ml/decision.py` | Políticas de decisión y alerta A1. |
-| `src/triaje_ia/ml/explicabilidad.py` | Explicaciones SHAP. |
-| `src/triaje_ia/ui/app.py` | Aplicación Streamlit. |
+En este trabajo he desarrollado un flujo completo que conecta el desarrollo
+experimental con una aplicación final ejecutable:
 
-## Notebooks finales
+- extracción de información clínica desde texto libre mediante un LLM local o
+  vía API;
+- representación intermedia tipada mediante `VectorClinico` y Pydantic;
+- normalización, validación y revisión manual antes de predecir;
+- adaptación de la información disponible en la app a las 79 variables del
+  modelo;
+- clasificación multiclase con LightGBM y componentes semánticos BERT/SVD;
+- explicación local de cada resultado mediante valores SHAP;
+- alerta visual conservadora para casos con probabilidad relevante de Acuity 1;
+- notebooks, auditorías, métricas y artefactos que permiten seguir las decisiones
+  tomadas durante el proyecto.
 
-Los notebooks que quedan en el proyecto forman el flujo defendible del TFG:
+La escala ESI/Acuity ordena la prioridad de atención desde el nivel 1, reservado
+para los casos más críticos, hasta el nivel 5, correspondiente a los de menor
+urgencia.
 
-| Notebook | Rol |
-|---|---|
-| `notebooks/1_data_understanding/01_data_exploration.ipynb` | Exploración inicial del dataset. |
-| `notebooks/1_data_understanding/02_loader_validation.ipynb` | Validación de la carga de datos. |
-| `notebooks/2_data_preparation/03_cleaning_analysis.ipynb` | Análisis de limpieza. |
-| `notebooks/2_data_preparation/04_cleaner_validation.ipynb` | Validación del cleaner. |
-| `notebooks/2_data_preparation/05_feature_engineering.ipynb` | Construcción de features tabulares. |
-| `notebooks/2_data_preparation/05b_feature_validation.ipynb` | Validación y ampliación final de features. |
-| `notebooks/3_modeling/06_nlp_feature_extraction.ipynb` | Features LLM y embeddings BERT/SVD. |
-| `notebooks/3_modeling/07_model_training.ipynb` | Entrenamiento, CV, OOF y congelación del modelo final. |
-| `notebooks/4_evaluation/08_model_evaluation.ipynb` | Evaluación final sobre test temporal. |
-| `notebooks/4_evaluation/09_llm_extraction_validation.ipynb` | Validación local de extracción LLM con casos clínicos. |
+## Aplicación
 
-El repositorio conserva además cuatro notebooks complementarios citados en la
-memoria:
+La interfaz organiza el proceso en tres etapas: registro, revisión y resultado.
+Las siguientes capturas corresponden al mismo caso sintético del capítulo 8 de
+la memoria. No proceden de una historia clínica real.
 
-| Notebook | Rol |
-|---|---|
-| `notebooks/3_modeling/07b_lgbm_bert_optuna_tuning.ipynb` | Optimización Optuna evaluada y finalmente descartada. |
-| `notebooks/3_modeling/07c_lgbm_bert_tail_class_tuning.ipynb` | Estudio de ajustes para las clases de cola no adoptados. |
-| `notebooks/4_evaluation/10_llm_production_flow_audit_v3.ipynb` | Auditoría extremo a extremo del flujo de producción. |
-| `notebooks/4_evaluation/11_llm_minimum_information_audit_v3.ipynb` | Auditoría del efecto de distintos niveles de información de entrada. |
+### 1. Registro guiado del episodio
 
-Estos cuatro notebooks aportan trazabilidad, pero no sustituyen la línea
-principal ni convierten los casos sintéticos en validación clínica.
+El usuario introduce el motivo de consulta, las constantes vitales, el dolor y
+el contexto clínico disponible. Los discriminadores de prioridad se registran
+de forma explícita cuando están presentes.
 
-Los notebooks históricos de prueba se han retirado de la línea final del
-proyecto para que el repositorio muestre solo el flujo principal.
+![Formulario de registro de un episodio clínico sintético](reports/figures/readme/01_registro_episodio.png)
 
-## Modelo final
+### 2. Revisión de la información extraída
 
-La configuración activa está en:
+El LLM convierte la narrativa en un `VectorClinico`. Antes de calcular el nivel,
+el usuario puede corregir síntomas, antecedentes, medicación, constantes o
+duración. La predicción nunca se ejecuta directamente sobre una extracción que
+no haya pasado por esta pantalla de revisión.
 
-```text
-models/active_model.json
-```
+![Revisión editable del vector clínico extraído](reports/figures/readme/02_revision_vector_clinico.png)
 
-El modelo final es:
+### 3. Predicción probabilística
 
-```text
-LightGBM + features tabulares finales + componentes BERT/SVD
-```
+La salida presenta el nivel sugerido y las probabilidades de los cinco niveles
+ESI. En el caso mostrado, el modelo asigna un 89,0 % de probabilidad a ESI 1.
 
-Artefactos principales:
+![Resultado probabilístico para el caso sintético](reports/figures/readme/03_resultado_prediccion.png)
 
-| Artefacto | Ruta |
-|---|---|
-| Clasificador final | `models/lgbm_bert_final.joblib` |
-| Lista exacta de variables | `models/feature_list.json` |
-| Umbral de alerta y política | `models/thresholds.json` |
-| Metadata de entrenamiento | `models/model_training_metadata.json` |
-| Supuestos de producción | `models/production_assumptions.json` |
-| Reductor BERT/SVD | `data/processed/bert_svd.joblib` |
-| Hashes de los artefactos | `models/artifact_manifest.json` |
+### 4. Explicación del resultado
 
-El modelo usa 79 variables finales. El entrenamiento se realizó sobre train con
-validación cruzada agrupada y predicciones OOF. El test temporal queda reservado
-para la evaluación final del notebook 08.
+La explicación SHAP separa los factores que aumentan y reducen el soporte del
+nivel sugerido. No constituye una explicación causal, pero permite comprobar
+qué información ha tenido más peso en la inferencia.
 
-Las variables finales combinan constantes vitales, flags clínicos derivados,
-medicación y antecedentes, motivo de consulta, variables de llegada y
-componentes semánticos BERT/SVD del texto.
+![Factores SHAP que influyen en el resultado](reports/figures/readme/04_explicacion_shap.png)
 
-La decisión final de la app usa `argmax`. Además, se muestra una alerta clínica
-conservadora si `P(Acuity 1) >= 0.40` y la clase sugerida no es ESI 1. Esa alerta
-no cambia automáticamente la predicción: sirve como aviso de seguridad.
+## Funcionamiento
 
-## Datos usados
+![Flujo local de inferencia del prototipo](reports/figures/readme/flujo_inferencia.png)
 
-El modelado se realiza sobre MIMIC-IV-ED con separación temporal train/test:
+El recorrido de un episodio es el siguiente:
 
-| Partición | Episodios |
+1. La interfaz construye una narrativa estable a partir del formulario.
+2. El backend LLM extrae un JSON clínico estructurado.
+3. Pydantic comprueba tipos y rangos; después se normalizan términos frecuentes
+   y se generan avisos de coherencia.
+4. El usuario confirma o corrige el `VectorClinico`.
+5. El adaptador genera las variables tabulares disponibles en tiempo de
+   inferencia.
+6. Bio_ClinicalBERT representa el texto y el reductor SVD congelado obtiene 15
+   componentes semánticos.
+7. LightGBM calcula las probabilidades de Acuity 1 a 5.
+8. La interfaz muestra la clase `argmax`, la distribución completa y la
+   explicación SHAP.
+
+La aplicación utiliza `argmax` como regla de decisión. Cuando
+`P(Acuity 1) >= 0.40` y la clase sugerida no es ESI 1, muestra además una alerta
+de seguridad. El aviso no modifica automáticamente la predicción.
+
+## Metodología
+
+### Datos y particionado
+
+El desarrollo utiliza MIMIC-IV-ED, una base de datos de episodios de urgencias
+disponible bajo acceso controlado en PhysioNet.
+
+| Cohorte | Episodios | Uso |
+|---|---:|---|
+| Cohorte completa | 418.100 | Total tras aplicar los criterios del estudio |
+| Desarrollo | 334.480 | Entrenamiento, validación agrupada y predicciones OOF |
+| Prueba temporal | 83.620 | Evaluación final del modelo congelado |
+
+El conjunto de prueba corresponde al tramo temporal final. La separación se
+realiza por paciente para evitar que episodios de una misma persona aparezcan a
+ambos lados del particionado. Los transformadores, la selección de variables y
+los hiperparámetros se ajustan únicamente con datos de desarrollo.
+
+### Variables y modelo final
+
+El modelo final combina:
+
+- **64 variables tabulares:** constantes vitales, escalas derivadas, motivo de
+  consulta, llegada, medicación, antecedentes y señales clínicas;
+- **15 componentes BERT/SVD:** representación compacta del texto clínico;
+- **LightGBM multiclase:** salida probabilística para Acuity 1–5.
+
+La configuración congelada se encuentra en
+[`models/active_model.json`](models/active_model.json), y la lista exacta de
+predictores en [`models/feature_list.json`](models/feature_list.json).
+
+### Selección durante el desarrollo
+
+La métrica principal de selección fue Macro F1 calculada mediante validación
+cruzada agrupada y predicciones *out-of-fold*. El conjunto temporal de prueba no
+se utilizó para escoger modelos, variables, umbrales ni calibración.
+
+| Modelo de desarrollo | Macro F1 OOF |
 |---|---:|
-| Train | 334.480 |
-| Test temporal | 83.620 |
+| `DummyClassifier` estratificado | 0,200 |
+| Regresión logística base | 0,372 |
+| LightGBM con 46 variables base | 0,487 |
+| LightGBM final con BERT/SVD | 0,568 |
 
-Distribución de clases en el test temporal:
+Los experimentos posteriores de optimización y clases minoritarias se conservan
+como trazabilidad, pero no sustituyen al modelo final cuando no cumplen los
+criterios de adopción definidos sobre OOF.
 
-| Clase | Porcentaje |
-|---|---:|
-| Acuity 1 | 5,6 % |
-| Acuity 2 | 33,7 % |
-| Acuity 3 | 54,3 % |
-| Acuity 4 | 6,3 % |
-| Acuity 5 | 0,2 % |
+## Resultados
 
-## Resultados principales
-
-Resultados finales sobre test temporal (`n = 83.620`), generados por
-`notebooks/4_evaluation/08_model_evaluation.ipynb`:
+Los resultados siguientes proceden exclusivamente del conjunto temporal de
+prueba final (`n = 83.620`), una vez congelado el modelo.
 
 | Métrica | Valor |
 |---|---:|
-| Macro F1 | 0.560 |
-| Weighted F1 | 0.697 |
-| Balanced Accuracy | 0.576 |
-| Precision Acuity 1 | 0.658 |
-| Recall Acuity 1 | 0.691 |
-| F1 Acuity 1 | 0.674 |
-| Precision Acuity 2 | 0.665 |
-| Recall Acuity 2 | 0.668 |
-| F1 Acuity 2 | 0.667 |
-| AUPRC Acuity 1 | 0.705 |
-| AUPRC Acuity 2 | 0.726 |
+| Macro F1 | **0,560** |
+| F1 ponderado | **0,697** |
+| Balanced accuracy | **0,576** |
+| AUPRC Acuity 1 | **0,705** |
+| AUPRC Acuity 2 | **0,726** |
+| Recall Acuity 1 | **0,691** |
 
-Como referencia interna de desarrollo, el baseline `DummyClassifier`
-estratificado obtuvo una Macro F1 OOF de 0.200, la regresión logística base
-0.372 y LightGBM con las 46 variables base 0.487. El modelo final
-LightGBM+BERT/SVD alcanzó 0.568 en OOF y 0.560 en el test temporal.
+<p align="center">
+  <img src="reports/figures/final_evaluation/precision_recall_a1_a2.png" width="49%" alt="Curvas precision-recall para Acuity 1 y Acuity 2">
+  <img src="reports/figures/final_evaluation/confusion_matrix_normalized.png" width="45%" alt="Matriz de confusión normalizada del modelo final">
+</p>
 
-Archivos de resultados:
+<details>
+<summary><strong>Consultar métricas completas por clase</strong></summary>
+
+| Clase | Precisión | Recall | F1 | Episodios |
+|---|---:|---:|---:|---:|
+| Acuity 1 | 0,658 | 0,691 | 0,674 | 4.648 |
+| Acuity 2 | 0,665 | 0,668 | 0,667 | 28.149 |
+| Acuity 3 | 0,766 | 0,725 | 0,745 | 45.391 |
+| Acuity 4 | 0,415 | 0,577 | 0,483 | 5.264 |
+| Acuity 5 | 0,247 | 0,220 | 0,233 | 168 |
+
+</details>
+
+### Interpretación global
+
+La importancia SHAP agregada permite observar la contribución media de cada
+variable entre las cinco clases. La llegada en ambulancia, las señales
+neurológicas, los componentes semánticos, NEWS2 y distintos elementos del motivo
+de consulta aparecen entre los factores con mayor peso global.
+
+![Importancia global SHAP del modelo final](reports/figures/final_evaluation/shap_importancia_global_top15_es.png)
+
+Los valores numéricos completos se encuentran en
+[`reports/final_evaluation/`](reports/final_evaluation/) y las figuras finales en
+[`reports/figures/final_evaluation/`](reports/figures/final_evaluation/).
+
+## Estructura del repositorio
 
 ```text
-reports/final_evaluation/final_metrics.json
-reports/final_evaluation/classification_report.csv
-reports/final_evaluation/safety_analysis.csv
-reports/final_evaluation/auprc_metrics.json
-reports/figures/final_evaluation/confusion_matrix.png
-reports/figures/final_evaluation/confusion_matrix_normalized.png
-reports/figures/final_evaluation/shap_summary.png
+triaje-ia-tfg/
+├── src/triaje_ia/              Código fuente
+│   ├── data/                   Carga, limpieza y features offline
+│   ├── llm/                    Extracción, normalización y validación
+│   ├── inference/              Adaptador y predictor de la aplicación
+│   ├── ml/                     Pipeline, decisión y explicabilidad
+│   └── ui/app.py               Interfaz Streamlit
+├── notebooks/                  Desarrollo metodológico del TFG
+├── prompts/                    Prompts del extractor clínico
+├── models/                     Modelo activo, configuración y manifiesto
+├── artifacts/                  Selección de características
+├── reports/                    Métricas, auditorías y figuras finales
+├── tests/                      Tests unitarios
+├── pyproject.toml              Dependencias y configuración
+└── uv.lock                     Entorno reproducible
 ```
 
-## Cómo probar el proyecto
+Rutas especialmente útiles para revisar el proyecto:
+
+| Contenido | Ruta |
+|---|---|
+| Aplicación principal | [`src/triaje_ia/ui/app.py`](src/triaje_ia/ui/app.py) |
+| Esquema `VectorClinico` | [`src/triaje_ia/llm/schemas.py`](src/triaje_ia/llm/schemas.py) |
+| Adaptador de inferencia | [`src/triaje_ia/inference/adapter.py`](src/triaje_ia/inference/adapter.py) |
+| Predictor final | [`src/triaje_ia/inference/predictor.py`](src/triaje_ia/inference/predictor.py) |
+| Política de decisión | [`src/triaje_ia/ml/decision.py`](src/triaje_ia/ml/decision.py) |
+| Explicabilidad | [`src/triaje_ia/ml/explicabilidad.py`](src/triaje_ia/ml/explicabilidad.py) |
+| Resultados finales | [`reports/final_evaluation/`](reports/final_evaluation/) |
+| Auditorías del LLM | [`reports/auditorias_finales/`](reports/auditorias_finales/) |
+| Selección de características | [`artifacts/`](artifacts/) |
+
+## Reproducir el proyecto
 
 ### Requisitos
 
-- Python 3.11 o superior
-- `uv`
-- Ollama si se quiere usar extracción local
-- Artefactos del modelo final y datos procesados necesarios
+- Python 3.11 o superior.
+- [`uv`](https://docs.astral.sh/uv/) como gestor del entorno.
+- Ollama para la extracción local, o credenciales para el backend API.
+- Conexión a Internet en la primera carga de Bio_ClinicalBERT si el modelo no
+  está ya en caché.
 
-Instalación:
+### Instalación
 
 ```bash
+git clone https://github.com/CarlosRubM/triaje-ia-tfg.git
+cd triaje-ia-tfg
 uv sync
 ```
 
-Para desarrollo y tests:
+Para instalar también las herramientas de desarrollo y ejecutar los tests:
 
 ```bash
 uv sync --group dev
 ```
 
-### Configuración del LLM
+### Configuración del extractor LLM
 
-El proyecto incluye `.env.example`. Para usar configuración local:
+Copiar `.env.example` como `.env`. Este último archivo es local y está excluido
+de Git.
 
-```bash
-cp .env.example .env
-```
-
-Backend local recomendado:
+Para el backend recomendado en local:
 
 ```text
 LLM_BACKEND=ollama
 ```
-
-Modelo usado en las pruebas locales:
 
 ```bash
 ollama pull llama3.1:8b-instruct-q4_K_M
 ollama serve
 ```
 
-También existe backend API (`LLM_BACKEND=api`) preparado para Groq/OpenAI, pero
-la vía local con Ollama es la opción principal para este prototipo.
+También puede utilizarse `LLM_BACKEND=api` con la configuración indicada en
+[`.env.example`](.env.example).
 
 ### Ejecutar la aplicación
 
@@ -259,70 +298,78 @@ la vía local con Ollama es la opción principal para este prototipo.
 uv run streamlit run src/triaje_ia/ui/app.py
 ```
 
-Para que la app funcione deben existir:
+El clasificador y el reductor final están incluidos en:
 
 ```text
 models/lgbm_bert_final.joblib
-models/active_model.json
-models/feature_list.json
-models/thresholds.json
-models/model_training_metadata.json
-models/production_assumptions.json
 data/processed/bert_svd.joblib
 ```
 
-El clasificador y el reductor BERT/SVD están incluidos como artefactos finales
-congelados. Sus tamaños y hashes SHA-256 se registran en
-`models/artifact_manifest.json`, por lo que no es necesario obtenerlos por
-separado después de clonar el repositorio. La primera ejecución sí puede
-descargar el modelo Bio_ClinicalBERT desde Hugging Face si no está en caché, y
-la extracción local requiere que Ollama y el modelo indicado estén instalados.
+Sus tamaños y hashes SHA-256 están registrados en
+[`models/artifact_manifest.json`](models/artifact_manifest.json). La
+configuración restante se carga desde `models/active_model.json`.
 
-### Ejecutar tests
+### Ejecutar los tests
 
 ```bash
 uv run pytest tests/ -v
 ```
 
-## Qué incluye y qué no incluye Git
+## Notebooks y trazabilidad
 
-Se versionan:
+Los notebooks conservan sus salidas para que puedan revisarse los resultados
+obtenidos durante el desarrollo.
 
-- código fuente
-- notebooks finales
-- tests
-- prompts
-- artefactos del proceso de selección de características
-- JSON pequeños de configuración del modelo
-- clasificador LightGBM y reductor BERT/SVD finales
-- métricas y figuras finales de evaluación
+<details>
+<summary><strong>Ver los 14 notebooks del proyecto</strong></summary>
 
-No se versionan:
+| Fase | Notebook | Finalidad |
+|---|---|---|
+| Comprensión | [`01_data_exploration.ipynb`](notebooks/1_data_understanding/01_data_exploration.ipynb) | Exploración de MIMIC-IV-ED |
+| Comprensión | [`02_loader_validation.ipynb`](notebooks/1_data_understanding/02_loader_validation.ipynb) | Validación de carga y uniones |
+| Preparación | [`03_cleaning_analysis.ipynb`](notebooks/2_data_preparation/03_cleaning_analysis.ipynb) | Análisis de limpieza |
+| Preparación | [`04_cleaner_validation.ipynb`](notebooks/2_data_preparation/04_cleaner_validation.ipynb) | Validación del proceso de limpieza |
+| Preparación | [`05_feature_engineering.ipynb`](notebooks/2_data_preparation/05_feature_engineering.ipynb) | Construcción de variables |
+| Preparación | [`05b_feature_validation.ipynb`](notebooks/2_data_preparation/05b_feature_validation.ipynb) | Selección y validación final |
+| Modelado | [`06_nlp_feature_extraction.ipynb`](notebooks/3_modeling/06_nlp_feature_extraction.ipynb) | Variables LLM y BERT/SVD |
+| Modelado | [`07_model_training.ipynb`](notebooks/3_modeling/07_model_training.ipynb) | Comparación, OOF y modelo final |
+| Modelado | [`07b_lgbm_bert_optuna_tuning.ipynb`](notebooks/3_modeling/07b_lgbm_bert_optuna_tuning.ipynb) | Optimización Optuna documentada |
+| Modelado | [`07c_lgbm_bert_tail_class_tuning.ipynb`](notebooks/3_modeling/07c_lgbm_bert_tail_class_tuning.ipynb) | Estudio de clases minoritarias |
+| Evaluación | [`08_model_evaluation.ipynb`](notebooks/4_evaluation/08_model_evaluation.ipynb) | Evaluación temporal final |
+| Evaluación | [`09_llm_extraction_validation.ipynb`](notebooks/4_evaluation/09_llm_extraction_validation.ipynb) | Validación de extracción clínica |
+| Auditoría | [`10_llm_production_flow_audit_v3.ipynb`](notebooks/4_evaluation/10_llm_production_flow_audit_v3.ipynb) | Auditoría extremo a extremo |
+| Auditoría | [`11_llm_minimum_information_audit_v3.ipynb`](notebooks/4_evaluation/11_llm_minimum_information_audit_v3.ipynb) | Calidad según información disponible |
 
-- datos originales de MIMIC-IV-ED
-- parquets intermedios pesados
-- caches de BERT/LLM
-- modelos experimentales o versiones alternativas de los `.joblib`
-- archivos `.env`
-- material histórico archivado antes de la entrega
+</details>
 
-Esto evita subir datos o binarios pesados y mantiene el repositorio centrado en
-el código, la metodología y los resultados finales.
+Los experimentos complementarios 07b, 07c, 10 y 11 están citados en la memoria
+y se mantienen con sus salidas como parte de la trazabilidad del trabajo. Los
+resultados de casos sintéticos no se presentan como validación clínica.
 
-## Limitaciones
+## Qué se versiona
 
-- El sistema es académico y no debe usarse para decisiones clínicas reales.
-- El entrenamiento se basa en MIMIC-IV-ED, por lo que puede existir diferencia
-  entre el entorno de entrenamiento y el uso sobre texto libre en la app.
-- La extracción LLM puede cometer errores u omisiones, aunque se aplican reglas
-  de validación y normalización.
-- Algunas variables históricas de urgencias no están disponibles en producción
-  desde texto libre y se imputan con supuestos conservadores documentados.
-- La explicación SHAP es descriptiva; no sustituye la valoración clínica.
+El repositorio incluye el código, los 14 notebooks con sus resultados, los
+tests, los prompts, las métricas, las figuras, los artefactos de selección de
+características y los dos artefactos congelados necesarios para ejecutar la
+aplicación.
+
+No se incluyen los datos originales de MIMIC-IV-ED, los parquets intermedios de
+trabajo, credenciales, cachés ni modelos experimentales sustituidos. El acceso a
+MIMIC-IV-ED está sujeto a las condiciones de PhysioNet.
+
+## Alcance y uso responsable
+
+- El proyecto demuestra la viabilidad técnica de un flujo híbrido LLM + ML; no
+  ha sido validado como dispositivo sanitario.
+- El usuario revisa la información extraída antes de calcular la predicción.
+- Las explicaciones SHAP describen el comportamiento del modelo, pero no
+  establecen causalidad clínica.
+- La alerta A1 es un mecanismo visual de apoyo y no reemplaza el juicio de un
+  profesional.
+- No se almacenan ni versionan datos de pacientes en el repositorio.
 
 ## Autoría
 
-Proyecto desarrollado por Carlos Rubio como Trabajo Fin de Grado.
-
-Dataset de referencia: MIMIC-IV-ED, sujeto a las condiciones de acceso y uso de
-PhysioNet.
+Proyecto desarrollado por **Carlos Rubio Martínez** como Trabajo Fin de Grado en
+la Escuela Superior de Ingeniería Informática de Albacete, Universidad de
+Castilla-La Mancha.
