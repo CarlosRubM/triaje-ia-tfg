@@ -1,0 +1,162 @@
+{
+  "generated_at": "2026-06-06T00:13:54",
+  "n_features": 88,
+  "features_continuas": [
+    "pain",
+    "o2sat",
+    "resprate",
+    "heartrate",
+    "dbp",
+    "sbp",
+    "qsofa",
+    "news2",
+    "n_vitales_anomalos",
+    "pulse_pressure",
+    "age",
+    "n_medicamentos",
+    "n_visitas_previas",
+    "visitas_ultimo_mes",
+    "visitas_ultimo_año",
+    "dias_desde_ultima_visita"
+  ],
+  "features_binarias": [
+    "temperature_missing",
+    "o2sat_missing",
+    "pain_missing",
+    "o2sat_bajo_92",
+    "taquipnea_grave",
+    "fiebre",
+    "hipotension",
+    "hipertension_severa",
+    "qsofa_positivo",
+    "news2_alto",
+    "shock_index_alto",
+    "shock_index_severo",
+    "shock_oculto_anciano",
+    "vitales_criticos",
+    "sirs_positivo",
+    "zona_verde",
+    "anciano",
+    "anciano_mayor",
+    "identidad_desconocida",
+    "llegada_autonoma",
+    "llegada_ambulancia",
+    "llegada_helicoptero",
+    "llegada_desconocida",
+    "med_anticoagulante",
+    "med_antiagregante",
+    "med_insulina",
+    "med_antidiabetico_oral",
+    "med_corticoide_sistemico",
+    "med_opiaceo",
+    "med_benzodiacepina",
+    "med_betabloqueante",
+    "med_ace_ara2",
+    "med_diuretico_asa",
+    "med_diuretico_tiazida",
+    "med_antipsicótico",
+    "med_ssri_snri",
+    "med_anticonvulsivante",
+    "med_respiratorio_inhalado",
+    "med_inmunosupresor",
+    "med_digoxina",
+    "med_antiaritmico",
+    "alto_riesgo_sangrado",
+    "alto_riesgo_delirium",
+    "riesgo_depresion_resp",
+    "sin_medicacion",
+    "polifarmacia",
+    "hiperpolifarmacia",
+    "cc_dolor_toracico",
+    "cc_disnea",
+    "cc_gi_agudo",
+    "cc_neuro_ams",
+    "cc_cefalea",
+    "cc_trauma",
+    "cc_psiquiatrico",
+    "cc_intoxicacion",
+    "cc_infeccioso",
+    "cc_urologico",
+    "cc_hemorragia_activa",
+    "cc_alergia_anafilaxia",
+    "cc_derivacion_urgente",
+    "primera_visita",
+    "frecuentador",
+    "hx_cardiaco",
+    "hx_respiratorio",
+    "hx_neuro",
+    "hx_psiquiatrico",
+    "hx_abuso_sustancias",
+    "hx_digestivo",
+    "hx_metabolico_renal",
+    "hx_infeccioso",
+    "hx_trauma_muscular"
+  ],
+  "features_categoricas": [
+    "gender"
+  ],
+  "vectorclinico_fields": [
+    "edad",
+    "sexo",
+    "sintomas_presentes",
+    "patologias_previas",
+    "medicacion_habitual",
+    "presion_sistolica",
+    "presion_diastolica",
+    "frecuencia_cardiaca",
+    "frecuencia_respiratoria",
+    "saturacion_oxigeno",
+    "temperatura",
+    "nivel_dolor",
+    "duracion_sintomas",
+    "metodo_llegada"
+  ],
+  "checks": [
+    {
+      "name": "catalogo_88_features",
+      "passed": true,
+      "detail": "88 features catalogadas"
+    },
+    {
+      "name": "llegada_ambulancia",
+      "passed": true,
+      "detail": "ambulancia -> llegada_ambulancia"
+    },
+    {
+      "name": "llegada_helicoptero",
+      "passed": true,
+      "detail": "helicoptero -> llegada_helicoptero"
+    },
+    {
+      "name": "llegada_autonomo",
+      "passed": true,
+      "detail": "autonomo -> llegada_autonoma"
+    },
+    {
+      "name": "llegada_otro",
+      "passed": true,
+      "detail": "otro -> llegada_autonoma"
+    },
+    {
+      "name": "llegada_desconocido",
+      "passed": true,
+      "detail": "desconocido -> llegada_desconocida"
+    },
+    {
+      "name": "sin_medicacion_excluye_riesgo_farmacologico",
+      "passed": true,
+      "detail": "sin medicacion mantiene todas las flags farmacologicas a cero"
+    },
+    {
+      "name": "zona_verde_excluye_criticos",
+      "passed": true,
+      "detail": "constantes normales activan zona verde sin criticos"
+    },
+    {
+      "name": "qsofa_dos_criterios",
+      "passed": true,
+      "detail": "FR 22 y PAS 100 activan qSOFA positivo"
+    }
+  ],
+  "passed": true
+}

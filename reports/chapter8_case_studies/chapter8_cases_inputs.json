@@ -1,0 +1,80 @@
+[
+  {
+    "case_id": "caso_1",
+    "title": "Compromiso respiratorio y cardiovascular",
+    "intended_profile": "Prioridad maxima esperada por alteracion respiratoria y hemodinamica.",
+    "source_note": "Caso sintetico demostrativo del capitulo 8; no procede de pacientes reales ni de historias clinicas externas.",
+    "input": {
+      "edad": 78,
+      "sexo": "M",
+      "metodo_llegada": "ambulancia",
+      "motivo_consulta": "Disnea intensa y dolor toracico",
+      "sintomas_frecuentes": [],
+      "sintomas_adicionales": "Dolor toracico opresivo, sudoracion y mal estado general",
+      "signos_alarma": [],
+      "duracion_sintomas": "6 horas",
+      "presion_sistolica": 92,
+      "presion_diastolica": 58,
+      "frecuencia_cardiaca": 118,
+      "frecuencia_respiratoria": 30,
+      "saturacion_oxigeno": 88.0,
+      "temperatura": 37.8,
+      "nivel_dolor": 8,
+      "antecedentes": "Insuficiencia cardiaca, diabetes tipo 2, fibrilacion auricular",
+      "medicacion": "Anticoagulante, furosemida, betabloqueante, insulina",
+      "observaciones": ""
+    }
+  },
+  {
+    "case_id": "caso_2",
+    "title": "Dolor abdominal con vomitos y estrenimiento",
+    "intended_profile": "Prioridad intermedia esperada por sintomas abdominales y recursos probables.",
+    "source_note": "Caso sintetico demostrativo del capitulo 8; no procede de pacientes reales ni de historias clinicas externas.",
+    "input": {
+      "edad": 34,
+      "sexo": "F",
+      "metodo_llegada": "autonomo",
+      "motivo_consulta": "Dolor abdominal generalizado con vomitos y estrenimiento",
+      "sintomas_frecuentes": [],
+      "sintomas_adicionales": "Dolor abdominal generalizado, vomitos y estrenimiento. Antecedente de laminectomia. Ultima regla dentro de los ultimos 28 dias.",
+      "signos_alarma": [],
+      "duracion_sintomas": "Desde esta manana",
+      "presion_sistolica": 132,
+      "presion_diastolica": 80,
+      "frecuencia_cardiaca": 102,
+      "frecuencia_respiratoria": 16,
+      "saturacion_oxigeno": 99.0,
+      "temperatura": 36.5,
+      "nivel_dolor": 6,
+      "antecedentes": "Laminectomia",
+      "medicacion": "",
+      "observaciones": ""
+    }
+  },
+  {
+    "case_id": "caso_3",
+    "title": "Ojo rojo y picor ocular",
+    "intended_profile": "Baja prioridad esperada por cuadro leve, sin signos de alarma y constantes normales.",
+    "source_note": "Caso sintetico demostrativo del capitulo 8; no procede de pacientes reales ni de historias clinicas externas.",
+    "input": {
+      "edad": 28,
+      "sexo": "F",
+      "metodo_llegada": "autonomo",
+      "motivo_consulta": "Ojo rojo y picor ocular",
+      "sintomas_frecuentes": [],
+      "sintomas_adicionales": "Ojo rojo con picor y lagrimeo leve. Sin dolor intenso, sin perdida de vision, sin traumatismo y sin fiebre.",
+      "signos_alarma": [],
+      "duracion_sintomas": "2 dias",
+      "presion_sistolica": 116,
+      "presion_diastolica": 72,
+      "frecuencia_cardiaca": 74,
+      "frecuencia_respiratoria": 16,
+      "saturacion_oxigeno": 99.0,
+      "temperatura": 36.4,
+      "nivel_dolor": 1,
+      "antecedentes": "",
+      "medicacion": "",
+      "observaciones": ""
+    }
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "model": "models/lgbm_bert_final.joblib",
+  "model_name": "lightgbm_final_bert",
+  "source": "test temporal",
+  "n_test": 83620,
+  "sample_size": 2000,
+  "random_state": 42,
+  "sampling": "np.sort(default_rng(42).choice(n_test, size=2000, replace=False))",
+  "n_features": 79,
+  "classes": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "aggregated_definition": "mean(abs(SHAP)) across the five model outputs for each sample and feature",
+  "files": {
+    "manifest": "shap_sample_manifest.csv",
+    "features": "shap_sample_features.parquet",
+    "aggregated": "shap_sample_values_aggregated.parquet",
+    "signed_by_class": [
+      "shap_sample_values_acuity_1.parquet",
+      "shap_sample_values_acuity_2.parquet",
+      "shap_sample_values_acuity_3.parquet",
+      "shap_sample_values_acuity_4.parquet",
+      "shap_sample_values_acuity_5.parquet"
+    ]
+  }
+}
