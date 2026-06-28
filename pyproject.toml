@@ -19,7 +19,7 @@ dependencies = [
     # Explicabilidad
     "shap>=0.46.0",
     # Frontend
-    "streamlit>=1.37.0",
+    "streamlit>=1.58.0",
     "streamlit-shap>=0.1.0",
     "plotly>=5.23.0",
     # Configuracion runtime
