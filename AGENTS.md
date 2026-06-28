@@ -97,6 +97,19 @@ notebooks/4_evaluation/08_model_evaluation.ipynb
 notebooks/4_evaluation/09_llm_extraction_validation.ipynb
 ```
 
+Además, se conservan como evidencia complementaria citada en la memoria:
+
+```text
+notebooks/3_modeling/07b_lgbm_bert_optuna_tuning.ipynb
+notebooks/3_modeling/07c_lgbm_bert_tail_class_tuning.ipynb
+notebooks/4_evaluation/10_llm_production_flow_audit_v3.ipynb
+notebooks/4_evaluation/11_llm_minimum_information_audit_v3.ipynb
+```
+
+Los notebooks `07b` y `07c` documentan alternativas evaluadas y descartadas.
+Los notebooks `10` y `11` son auditorías del flujo final y de la información
+mínima; no constituyen validación clínica ni sustituyen la línea principal.
+
 Los notebooks antiguos de pruebas se han movido fuera de la línea final del
 proyecto. No deben volver a mezclarse con el flujo principal salvo para consultar
 contexto histórico.
@@ -156,12 +169,17 @@ models/model_training_metadata.json
 models/production_assumptions.json
 ```
 
-Artefactos necesarios para ejecutar la app, pero no pensados para Git normal:
+Artefactos finales congelados que se versionan como excepción para que un clon
+pueda ejecutar la app:
 
 ```text
 models/lgbm_bert_final.joblib
 data/processed/bert_svd.joblib
+models/artifact_manifest.json
 ```
+
+La excepción se limita a estos dos binarios y a los hashes registrados en el
+manifiesto. Otros modelos serializados y datos procesados siguen sin subirse.
 
 Resultados finales útiles para la memoria:
 
@@ -250,8 +268,8 @@ No subir al repositorio normal:
 ```text
 data/raw/
 data/interim/
-data/processed/
-models/*.joblib
+data/processed/* salvo data/processed/bert_svd.joblib
+models/*.joblib salvo models/lgbm_bert_final.joblib
 models/*.pkl
 .env
 .venv/

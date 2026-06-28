@@ -98,6 +98,19 @@ Los notebooks que quedan en el proyecto forman el flujo defendible del TFG:
 | `notebooks/4_evaluation/08_model_evaluation.ipynb` | Evaluación final sobre test temporal. |
 | `notebooks/4_evaluation/09_llm_extraction_validation.ipynb` | Validación local de extracción LLM con casos clínicos. |
 
+El repositorio conserva además cuatro notebooks complementarios citados en la
+memoria:
+
+| Notebook | Rol |
+|---|---|
+| `notebooks/3_modeling/07b_lgbm_bert_optuna_tuning.ipynb` | Optimización Optuna evaluada y finalmente descartada. |
+| `notebooks/3_modeling/07c_lgbm_bert_tail_class_tuning.ipynb` | Estudio de ajustes para las clases de cola no adoptados. |
+| `notebooks/4_evaluation/10_llm_production_flow_audit_v3.ipynb` | Auditoría extremo a extremo del flujo de producción. |
+| `notebooks/4_evaluation/11_llm_minimum_information_audit_v3.ipynb` | Auditoría del efecto de distintos niveles de información de entrada. |
+
+Estos cuatro notebooks aportan trazabilidad, pero no sustituyen la línea
+principal ni convierten los casos sintéticos en validación clínica.
+
 Los notebooks históricos de prueba se han retirado de la línea final del
 proyecto para que el repositorio muestre solo el flujo principal.
 
@@ -125,6 +138,7 @@ Artefactos principales:
 | Metadata de entrenamiento | `models/model_training_metadata.json` |
 | Supuestos de producción | `models/production_assumptions.json` |
 | Reductor BERT/SVD | `data/processed/bert_svd.joblib` |
+| Hashes de los artefactos | `models/artifact_manifest.json` |
 
 El modelo usa 79 variables finales. El entrenamiento se realizó sobre train con
 validación cruzada agrupada y predicciones OOF. El test temporal queda reservado
@@ -256,9 +270,12 @@ models/production_assumptions.json
 data/processed/bert_svd.joblib
 ```
 
-Los JSON de configuración sí están pensados para ir en el repositorio. El modelo
-`.joblib` y los artefactos pesados de `data/processed/` deben aportarse aparte
-si se clona el proyecto desde cero.
+El clasificador y el reductor BERT/SVD están incluidos como artefactos finales
+congelados. Sus tamaños y hashes SHA-256 se registran en
+`models/artifact_manifest.json`, por lo que no es necesario obtenerlos por
+separado después de clonar el repositorio. La primera ejecución sí puede
+descargar el modelo Bio_ClinicalBERT desde Hugging Face si no está en caché, y
+la extracción local requiere que Ollama y el modelo indicado estén instalados.
 
 ### Ejecutar tests
 
@@ -275,6 +292,7 @@ Se versionan:
 - tests
 - prompts
 - JSON pequeños de configuración del modelo
+- clasificador LightGBM y reductor BERT/SVD finales
 - métricas y figuras finales de evaluación
 
 No se versionan:
@@ -282,7 +300,7 @@ No se versionan:
 - datos originales de MIMIC-IV-ED
 - parquets intermedios pesados
 - caches de BERT/LLM
-- modelos `.joblib`
+- modelos experimentales o versiones alternativas de los `.joblib`
 - archivos `.env`
 - material histórico archivado antes de la entrega
 
