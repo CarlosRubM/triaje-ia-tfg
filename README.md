@@ -54,6 +54,7 @@ triaje-ia-tfg/
 │   └── 4_evaluation/
 ├── prompts/                        # Prompts usados por el extractor LLM
 ├── models/                         # Configuración del modelo activo
+├── artifacts/                      # Métricas y figuras de selección de características
 ├── reports/                        # Resultados y figuras finales
 ├── tests/                          # Tests unitarios
 ├── pyproject.toml
@@ -291,6 +292,7 @@ Se versionan:
 - notebooks finales
 - tests
 - prompts
+- artefactos del proceso de selección de características
 - JSON pequeños de configuración del modelo
 - clasificador LightGBM y reductor BERT/SVD finales
 - métricas y figuras finales de evaluación

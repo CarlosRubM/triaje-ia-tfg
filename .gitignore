@@ -21,6 +21,9 @@ data/processed/*
 *.parquet
 *.feather
 
+# Tablas finales del proceso de seleccion de caracteristicas
+!artifacts/*.csv
+
 # Resultados tabulares pequenos usados en la memoria
 !reports/chapter8_case_studies/*.csv
 !reports/final_evaluation/shap_importancia_global_top_features.csv
@@ -62,8 +65,7 @@ GUIA_DEFINITIVA_MEJORAS.md
 GUIA_*.md
 docs/
 
-# Artefactos generados en notebooks (regenerables)
-artifacts/
+# Artefactos auxiliares regenerables dentro de notebooks
 notebooks/**/*.png
 notebooks/**/*.pkl
 notebooks/**/*.json
