@@ -213,9 +213,9 @@ class TriajePredictor:
     ) -> ExplicacionSHAP:
         """Genera explicación SHAP. Llamar desde app.py en try/except."""
         target = clase if clase is not None else result.clase_predicha
-        explainer = crear_explainer(self._clf, clase=target)
+        explainer = crear_explainer(self._clf)
         return explicar_prediccion(
-            explainer, result.X, clase_predicha=target, modelo=self._clf
+            explainer, result.X, clase_predicha=target
         )
 
     def _build_features(self, vector: VectorClinico, narrativa: str) -> pd.DataFrame:

@@ -1221,9 +1221,9 @@ def _preparar_explicacion_resultado(predictor, result, clase_predicha: int) -> d
     try:
         import plotly.graph_objects as go
 
-        explainer = crear_explainer(predictor._clf, clase=clase_predicha)
+        explainer = crear_explainer(predictor._clf)
         shap_explanation = generar_shap_explanation_object(
-            explainer, result.X, clase=clase_predicha, modelo=predictor._clf,
+            explainer, result.X, clase=clase_predicha,
         )
 
         shap_vals = np.array(shap_explanation.values).flatten()
@@ -1286,7 +1286,7 @@ def _preparar_explicacion_resultado(predictor, result, clase_predicha: int) -> d
         )
 
         resultado_shap = explicar_prediccion(
-            explainer, result.X, clase_predicha=clase_predicha, modelo=predictor._clf,
+            explainer, result.X, clase_predicha=clase_predicha,
         )
         return {
             "ok": True,

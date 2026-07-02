@@ -27,9 +27,6 @@ import pandas as pd
 import shap
 from loguru import logger
 
-from triaje_ia.data.features import TODAS_FEATURES
-
-
 # ────────────────────────────────────────────────────────────
 # Tipos de retorno
 # ────────────────────────────────────────────────────────────
@@ -95,35 +92,7 @@ def _safe_value(v: Any) -> Any:
 # Explainer
 # ────────────────────────────────────────────────────────────
 
-def _es_ordinal_frank_hall(modelo) -> bool:
-    """Detecta si el modelo es un OrdinalFrankHall."""
-    return hasattr(modelo, "classifiers_") and hasattr(modelo, "n_classes_")
-
-
-def _extraer_clasificador_binario(modelo, clase: int):
-    """
-    Extrae el clasificador binario relevante de un OrdinalFrankHall.
-
-    Para clase k (1-indexed), el corte más informativo es:
-    - clase 1: h1 (P(Y≤1) vs P(Y>1))
-    - clase k (2..K-1): h_{k-1} (P(Y≤k-1) vs P(Y>k-1))
-    - clase K: h_{K-1} (P(Y≤K-1) vs P(Y>K-1))
-
-    Si el clasificador binario es un Pipeline (preprocesador + clasificador),
-    se extrae el estimador final para que TreeExplainer funcione.
-    """
-    idx = min(clase - 1, len(modelo.classifiers_) - 1)
-    clf = modelo.classifiers_[idx]
-
-    # Si es un Pipeline sklearn, extraer el step final (el clasificador)
-    from sklearn.pipeline import Pipeline as SkPipeline
-    if isinstance(clf, SkPipeline):
-        clf = clf.named_steps["clasificador"]
-
-    return clf, idx
-
-
-def crear_explainer(modelo, clase: int | None = None) -> shap.TreeExplainer:
+def crear_explainer(modelo) -> shap.TreeExplainer:
     """
     Crea un TreeExplainer para el modelo dado.
 
@@ -131,55 +100,17 @@ def crear_explainer(modelo, clase: int | None = None) -> shap.TreeExplainer:
     - LightGBM (Booster o LGBMClassifier)
     - RandomForest (sklearn)
     - XGBoost (Booster o XGBClassifier)
-    - OrdinalFrankHall (usa el clasificador binario del corte relevante)
-
-    Para OrdinalFrankHall, se debe pasar `clase` para seleccionar el
-    clasificador binario correcto. El explainer explica P(Y>threshold_k).
 
     Args:
-        modelo: modelo entrenado tree-based o OrdinalFrankHall.
-        clase: acuity 1-5, requerido para OrdinalFrankHall.
+        modelo: modelo entrenado tree-based.
 
     Returns:
         shap.TreeExplainer listo para .shap_values()
     """
-    if _es_ordinal_frank_hall(modelo):
-        if clase is None:
-            clase = 1  # default: explicar el corte más crítico
-        clf_binario, idx = _extraer_clasificador_binario(modelo, clase)
-        logger.info(
-            f"OrdinalFrankHall detectado: usando h{idx+1} "
-            f"(corte ordinal para clase {clase})"
-        )
-        explainer = shap.TreeExplainer(clf_binario)
-        logger.success(f"TreeExplainer creado para clasificador binario h{idx+1}")
-        return explainer
-
     logger.info(f"Creando TreeExplainer para {type(modelo).__name__}")
     explainer = shap.TreeExplainer(modelo)
     logger.success("TreeExplainer creado correctamente")
     return explainer
-
-
-def _preprocesar_para_shap(
-    modelo,
-    X: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Preprocesa X a través del pipeline del modelo si es OrdinalFrankHall.
-
-    OrdinalFrankHall contiene pipelines internos con un preprocesador.
-    SHAP TreeExplainer opera sobre el clasificador base, no el pipeline,
-    así que debemos preprocesar X primero.
-    """
-    if _es_ordinal_frank_hall(modelo):
-        from sklearn.pipeline import Pipeline as SkPipeline
-        clf_pipeline = modelo.classifiers_[0]  # todos comparten el mismo preprocesador
-        if isinstance(clf_pipeline, SkPipeline):
-            prepro = clf_pipeline.named_steps.get("preprocesador")
-            if prepro is not None:
-                return prepro.transform(X)
-    return X
 
 
 def explicar_prediccion(
@@ -187,7 +118,6 @@ def explicar_prediccion(
     X: pd.DataFrame,
     clase_predicha: int,
     top_n: int = 5,
-    modelo=None,
 ) -> ExplicacionSHAP:
     """
     Genera una explicación SHAP para una predicción individual.
@@ -198,8 +128,6 @@ def explicar_prediccion(
         clase_predicha: clase predicha (acuity 1-5). Se usa como índice
                         de clase para extraer los SHAP values relevantes.
         top_n: número de features top positivas/negativas a devolver.
-        modelo: modelo original (necesario para OrdinalFrankHall para
-                preprocesar X antes de SHAP).
 
     Returns:
         ExplicacionSHAP con todos los datos para visualización.
@@ -207,11 +135,7 @@ def explicar_prediccion(
     if len(X) != 1:
         raise ValueError(f"Se espera exactamente 1 fila, recibidas {len(X)}")
 
-    # Para OrdinalFrankHall, preprocesar X a través del pipeline interno
-    if modelo is not None and _es_ordinal_frank_hall(modelo):
-        X_shap = _preprocesar_para_shap(modelo, X)
-    else:
-        X_shap = X
+    X_shap = X
 
     idx_clase = clase_predicha - 1  # acuity 1-5 → índice 0-4
 
@@ -219,19 +143,12 @@ def explicar_prediccion(
     sv_raw = explainer.shap_values(X_shap)
 
     # sv_raw puede ser:
-    #   - lista de 2 arrays shape (1, n_features) [binario de OrdinalFrankHall]
     #   - lista de n_clases arrays shape (1, n_features)  [RF, XGB]
     #   - np.ndarray shape (1, n_features, n_clases)      [LGBM]
     #   - np.ndarray shape (1, n_features)                [binario]
     if isinstance(sv_raw, list):
-        if len(sv_raw) == 2:
-            # Clasificador binario (OrdinalFrankHall): clase positiva = index 1
-            shap_clase = sv_raw[1][0]  # P(Y > threshold)
-            shap_all = None
-        else:
-            # Lista de arrays por clase (RF, XGBoost multiclase)
-            shap_clase = sv_raw[idx_clase][0]  # shape (n_features,)
-            shap_all = np.stack([arr[0] for arr in sv_raw], axis=-1)
+        shap_clase = sv_raw[idx_clase][0]  # shape (n_features,)
+        shap_all = np.stack([arr[0] for arr in sv_raw], axis=-1)
     elif isinstance(sv_raw, np.ndarray) and sv_raw.ndim == 3:
         # LGBM: shape (1, n_features, n_clases)
         shap_clase = sv_raw[0, :, idx_clase]
@@ -244,10 +161,7 @@ def explicar_prediccion(
     # Base value
     bv = explainer.expected_value
     if isinstance(bv, (list, np.ndarray)):
-        if len(bv) == 2:
-            base_value = float(bv[1])  # binario: clase positiva
-        else:
-            base_value = float(bv[idx_clase])
+        base_value = float(bv[idx_clase])
     else:
         base_value = float(bv)
 
@@ -302,7 +216,6 @@ def generar_shap_explanation_object(
     explainer: shap.TreeExplainer,
     X: pd.DataFrame,
     clase: int,
-    modelo=None,
 ) -> shap.Explanation:
     """
     Genera un objeto shap.Explanation compatible con shap.plots.waterfall()
@@ -311,29 +224,19 @@ def generar_shap_explanation_object(
     Útil para renderizar directamente con:
         st_shap(shap.plots.waterfall(explanation))
 
-    Para OrdinalFrankHall, pasa `modelo` para preprocesar X correctamente.
-
     Args:
         explainer: TreeExplainer.
         X: DataFrame de 1 fila.
         clase: acuity 1-5.
-        modelo: modelo original (necesario para OrdinalFrankHall).
 
     Returns:
         shap.Explanation para una sola observación y clase.
     """
-    # Preprocesar si es OrdinalFrankHall
-    if modelo is not None and _es_ordinal_frank_hall(modelo):
-        X_shap = _preprocesar_para_shap(modelo, X)
-    else:
-        X_shap = X
+    X_shap = X
 
     sv_raw = explainer.shap_values(X_shap)
 
-    # Para clasificador binario (OrdinalFrankHall), usar clase positiva
-    if isinstance(sv_raw, list) and len(sv_raw) == 2:
-        values = sv_raw[1][0]
-    elif isinstance(sv_raw, list):
+    if isinstance(sv_raw, list):
         idx = clase - 1
         values = sv_raw[idx][0]
     elif isinstance(sv_raw, np.ndarray) and sv_raw.ndim == 3:
@@ -344,7 +247,7 @@ def generar_shap_explanation_object(
 
     bv = explainer.expected_value
     if isinstance(bv, (list, np.ndarray)):
-        base_value = float(bv[1]) if len(bv) == 2 else float(bv[clase - 1])
+        base_value = float(bv[clase - 1])
     else:
         base_value = float(bv)
 
