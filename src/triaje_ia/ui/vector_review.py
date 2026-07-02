@@ -21,11 +21,6 @@ def split_review_terms(value: str | None) -> list[str]:
     return terms
 
 
-def join_review_terms(values: list[str] | tuple[str, ...] | None) -> str:
-    """Format extracted list fields as editable comma-separated text."""
-    return ", ".join(str(v) for v in (values or []) if str(v).strip())
-
-
 def internalize_review_terms(value: str | None) -> list[str]:
     """Split Spanish-visible review terms and convert known values to internals."""
     return [
