@@ -45,8 +45,7 @@ de probabilidades como los principales factores SHAP del resultado.
 En este trabajo he desarrollado un flujo completo que conecta el desarrollo
 experimental con una aplicación final ejecutable:
 
-- extracción de información clínica desde texto libre mediante un LLM local o
-  vía API;
+- extracción de información clínica desde texto libre mediante un LLM local;
 - representación intermedia tipada mediante `VectorClinico` y Pydantic;
 - normalización, validación y revisión manual antes de predecir;
 - adaptación de la información disponible en la app a las 79 variables del
@@ -255,7 +254,7 @@ Rutas especialmente útiles para revisar el proyecto:
 
 - Python 3.11 o superior.
 - [`uv`](https://docs.astral.sh/uv/) como gestor del entorno.
-- Ollama para la extracción local, o credenciales para el backend API.
+- Ollama para la extracción local.
 - Conexión a Internet en la primera carga de Bio_ClinicalBERT si el modelo no
   está ya en caché.
 
@@ -275,22 +274,10 @@ uv sync --group dev
 
 ### Configuración del extractor LLM
 
-Copiar `.env.example` como `.env`. Este último archivo es local y está excluido
-de Git.
-
-Para el backend recomendado en local:
-
-```text
-LLM_BACKEND=ollama
-```
-
 ```bash
 ollama pull llama3.1:8b-instruct-q4_K_M
 ollama serve
 ```
-
-También puede utilizarse `LLM_BACKEND=api` con la configuración indicada en
-[`.env.example`](.env.example).
 
 ### Ejecutar la aplicación
 

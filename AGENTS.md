@@ -18,7 +18,7 @@ triaje de urgencias.
 
 El sistema combina:
 
-- un LLM local o vía API para extraer información clínica desde texto libre;
+- un LLM local con Ollama para extraer información clínica desde texto libre;
 - un `VectorClinico` estructurado con Pydantic;
 - un adaptador que transforma ese vector en features tabulares;
 - un modelo LightGBM final con features tabulares y componentes BERT/SVD;
@@ -47,8 +47,8 @@ No hacer nunca sin confirmación explícita:
 
 ```text
 Texto libre del caso clínico
-  -> llm/factory.py          selecciona backend LLM
-  -> llm/extractor*.py       extrae JSON clínico y crea VectorClinico
+  -> llm/factory.py          configura el extractor local
+  -> llm/extractor.py        extrae JSON clínico y crea VectorClinico
   -> llm/normalizer.py       normaliza síntomas y medicación frecuentes
   -> llm/validator.py        avisa de incoherencias semánticas
   -> inference/adapter.py    convierte VectorClinico a features tabulares

@@ -8,7 +8,6 @@ Ejecutar: uv run streamlit run src/triaje_ia/ui/app.py
 
 from concurrent.futures import ThreadPoolExecutor
 import html
-import os
 import time
 import numpy as np
 import pandas as pd
@@ -49,24 +48,9 @@ def _cargar_predictor():
     return TriajePredictor()
 
 
-# Backend LLM via variable de entorno (ollama local / api cloud)
-LLM_BACKEND = os.getenv("LLM_BACKEND", "ollama")
-_extraer_fn = crear_extractor(LLM_BACKEND)
-
-# Modelo fijo: primer elemento de la lista
-_MODELOS_LLM = (
-    [
-        "llama3.1:8b-instruct-q4_K_M",
-        "llama3.2",
-        "qwen2.5",
-        "qwen2.5:7b",
-        "llama3.2:1b",
-        "mistral",
-    ]
-    if LLM_BACKEND == "ollama"
-    else ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
-)
-MODELO_LLM_FIJO = _MODELOS_LLM[0]
+# Extracción clínica local con Ollama.
+_extraer_fn = crear_extractor("ollama")
+MODELO_LLM_FIJO = "llama3.1:8b-instruct-q4_K_M"
 
 # Colores ESI por nivel de acuity
 ESI_CONFIG = {
