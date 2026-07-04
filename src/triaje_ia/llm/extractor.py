@@ -254,7 +254,7 @@ def extraer_vector_clinico(narrativa: str, modelo: str = "qwen2.5") -> VectorCli
             {"role": "user", "content": f"Narrativa:\n{narrativa}"},
         ],
         format=VectorClinico.model_json_schema(),
-        options={"temperature": 0.0},  # Determinismo total, sin creatividad
+        options={"temperature": 0.0, "num_ctx": 8192},  # Determinismo total, sin creatividad
     )
 
     vector = normalizar_vector_clinico(
