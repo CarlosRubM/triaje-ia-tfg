@@ -10,9 +10,9 @@ from dataclasses import dataclass, field
 
 
 SEX_LABELS = {
-    "M": "varon",
-    "F": "mujer",
-    "Otro": "otro/no binario",
+    "M": "Hombre",
+    "F": "Mujer",
+    "Otro": "Otro",
 }
 
 
@@ -115,7 +115,7 @@ def generar_narrativa_triaje(data: TriageFormData) -> str:
     if data.edad is not None:
         paciente += f" de {data.edad} años"
     if data.sexo:
-        paciente += f", sexo {data.sexo} ({SEX_LABELS.get(data.sexo, data.sexo)})"
+        paciente += f", sexo {SEX_LABELS.get(data.sexo, data.sexo)}"
     paciente += "."
 
     lines = [
@@ -157,7 +157,7 @@ def generar_narrativa_triaje_texto_libre(data: TriageFormData) -> str:
     if data.edad is not None:
         paciente += f" de {data.edad} años"
     if data.sexo:
-        paciente += f", sexo {data.sexo} ({SEX_LABELS.get(data.sexo, data.sexo)})"
+        paciente += f", sexo {SEX_LABELS.get(data.sexo, data.sexo)}"
     paciente += "."
 
     lines = [

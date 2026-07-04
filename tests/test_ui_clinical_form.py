@@ -30,7 +30,7 @@ def test_genera_narrativa_clara_con_caso_completo():
 
     narrativa = generar_narrativa_triaje(data)
 
-    assert "Paciente de 68 años, sexo M" in narrativa
+    assert "Paciente de 68 años, sexo Hombre" in narrativa
     assert "Motivo principal de consulta: dolor toracico opresivo." in narrativa
     assert "dolor toracico, disnea, sudoracion, nauseas" in narrativa
     assert "TA 156/92 mmHg" in narrativa
