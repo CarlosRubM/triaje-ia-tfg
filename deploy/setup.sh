@@ -76,7 +76,7 @@ cd "$REPO_DIR"
 uv sync
 
 log "8/14 — Variables de entorno de producción"
-install -m 600 "$REPO_DIR/deploy/.env.production" "$HOME/.env-production"
+install -m 600 "$REPO_DIR/deploy/.env.example" "$HOME/.env-production"
 
 log "9/14 — DuckDNS"
 mkdir -p /etc/duckdns
