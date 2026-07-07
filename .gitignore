@@ -49,12 +49,15 @@ models/*.json
 .vscode/settings.json
 .idea/
 .cursor/
+.claude/
+.ui-ux-reference/
 .codex-remote-attachments/
 *.DS_Store
 
 # Logs
 *.log
 logs/
+artifacts/streamlit_capture.*
 **/smoke_*/
 **/audit_cache.jsonl
 reports/hyperparameter_tuning/*.db
