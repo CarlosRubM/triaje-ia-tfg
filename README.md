@@ -12,10 +12,9 @@ Escuela Superior de Ingeniería Informática de Albacete · Universidad de Casti
 Dirección: María Emilia Cambronero Piqueras<br>
 Codirección: Manuel Fernández Ferrando y David Cebrian
 
-</div>
+🌐 **[Demo en línea: https://triaje.me/](https://triaje.me/)**
 
-> **Prototipo académico de apoyo a la decisión.** No es un producto sanitario ni
-> debe utilizarse para tomar decisiones clínicas reales.
+</div>
 
 `trIAje` estudia cómo combinar modelos de lenguaje y aprendizaje automático para
 apoyar la clasificación inicial de pacientes en urgencias. A partir de la
@@ -38,7 +37,6 @@ de probabilidades como los principales factores SHAP del resultado.
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Reproducir el proyecto](#reproducir-el-proyecto)
 - [Notebooks y trazabilidad](#notebooks-y-trazabilidad)
-- [Alcance y uso responsable](#alcance-y-uso-responsable)
 
 ## Qué aporta el proyecto
 
@@ -64,7 +62,7 @@ urgencia.
 
 La interfaz organiza el proceso en tres etapas: registro, revisión y resultado.
 Las siguientes capturas corresponden al mismo caso sintético del capítulo 8 de
-la memoria. No proceden de una historia clínica real.
+la memoria.
 
 ### 1. Registro guiado del episodio
 
@@ -93,8 +91,8 @@ ESI. En el caso mostrado, el modelo asigna un 89,0 % de probabilidad a ESI 1.
 ### 4. Explicación del resultado
 
 La explicación SHAP separa los factores que aumentan y reducen el soporte del
-nivel sugerido. No constituye una explicación causal, pero permite comprobar
-qué información ha tenido más peso en la inferencia.
+nivel sugerido y permite comprobar qué información ha tenido más peso en la
+inferencia.
 
 ![Factores SHAP que influyen en el resultado](reports/figures/readme/04_explicacion_shap.png)
 
@@ -241,8 +239,7 @@ Rutas especialmente útiles para revisar el proyecto:
 | Aplicación principal | [`src/triaje_ia/ui/app.py`](src/triaje_ia/ui/app.py) |
 | Esquema `VectorClinico` | [`src/triaje_ia/llm/schemas.py`](src/triaje_ia/llm/schemas.py) |
 | Adaptador de inferencia | [`src/triaje_ia/inference/adapter.py`](src/triaje_ia/inference/adapter.py) |
-| Predictor final | [`src/triaje_ia/inference/predictor.py`](src/triaje_ia/inference/predictor.py) |
-| Política de decisión | [`src/triaje_ia/ml/decision.py`](src/triaje_ia/ml/decision.py) |
+| Predictor y política de decisión | [`src/triaje_ia/inference/predictor.py`](src/triaje_ia/inference/predictor.py) |
 | Explicabilidad | [`src/triaje_ia/ml/explicabilidad.py`](src/triaje_ia/ml/explicabilidad.py) |
 | Resultados finales | [`reports/final_evaluation/`](reports/final_evaluation/) |
 | Auditorías del LLM | [`reports/auditorias_finales/`](reports/auditorias_finales/) |
@@ -330,8 +327,7 @@ obtenidos durante el desarrollo.
 </details>
 
 Los experimentos complementarios 07b, 07c, 10 y 11 están citados en la memoria
-y se mantienen con sus salidas como parte de la trazabilidad del trabajo. Los
-resultados de casos sintéticos no se presentan como validación clínica.
+y se mantienen con sus salidas como parte de la trazabilidad del trabajo.
 
 ## Qué se versiona
 
@@ -343,17 +339,6 @@ aplicación.
 No se incluyen los datos originales de MIMIC-IV-ED, los parquets intermedios de
 trabajo, credenciales, cachés ni modelos experimentales sustituidos. El acceso a
 MIMIC-IV-ED está sujeto a las condiciones de PhysioNet.
-
-## Alcance y uso responsable
-
-- El proyecto demuestra la viabilidad técnica de un flujo híbrido LLM + ML; no
-  ha sido validado como dispositivo sanitario.
-- El usuario revisa la información extraída antes de calcular la predicción.
-- Las explicaciones SHAP describen el comportamiento del modelo, pero no
-  establecen causalidad clínica.
-- La alerta A1 es un mecanismo visual de apoyo y no reemplaza el juicio de un
-  profesional.
-- No se almacenan ni versionan datos de pacientes en el repositorio.
 
 ## Autoría
 
