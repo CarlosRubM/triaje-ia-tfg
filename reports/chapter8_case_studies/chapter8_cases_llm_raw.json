@@ -1,0 +1,82 @@
+[
+  {
+    "case_id": "caso_1",
+    "llm_raw_content": "{\n  \"edad\": 78,\n  \"sexo\": \"M\",\n  \"sintomas_presentes\": [\"dyspnea\", \"chest pain\"],\n  \"patologias_previas\": [\"insuficiencia cardiaca\", \"diabetes tipo 2\", \"fibrilacion auricular\"],\n  \"medicacion_habitual\": [\"anticoagulants - coumarin\", \"loop diuretics\", \"beta blockers\", \"insulin\"],\n  \"presion_sistolica\": 92,\n  \"presion_diastolica\": 58,\n  \"frecuencia_cardiaca\": 118,\n  \"frecuencia_respiratoria\": 30,\n  \"saturacion_oxigeno\": 88.0,\n  \"temperatura\": 37.8,\n  \"nivel_dolor\": 8,\n  \"duracion_sintomas\": \"6 horas\",\n  \"metodo_llegada\": \"ambulancia\"\n}",
+    "llm_raw_json": {
+      "edad": 78,
+      "sexo": "M",
+      "sintomas_presentes": [
+        "dyspnea",
+        "chest pain"
+      ],
+      "patologias_previas": [
+        "insuficiencia cardiaca",
+        "diabetes tipo 2",
+        "fibrilacion auricular"
+      ],
+      "medicacion_habitual": [
+        "anticoagulants - coumarin",
+        "loop diuretics",
+        "beta blockers",
+        "insulin"
+      ],
+      "presion_sistolica": 92,
+      "presion_diastolica": 58,
+      "frecuencia_cardiaca": 118,
+      "frecuencia_respiratoria": 30,
+      "saturacion_oxigeno": 88.0,
+      "temperatura": 37.8,
+      "nivel_dolor": 8,
+      "duracion_sintomas": "6 horas",
+      "metodo_llegada": "ambulancia"
+    }
+  },
+  {
+    "case_id": "caso_2",
+    "llm_raw_content": "{\n  \"edad\": 34,\n  \"sexo\": \"F\",\n  \"sintomas_presentes\": [\"abdominal pain\", \"vomiting\", \"constipation\"],\n  \"patologias_previas\": [\"laminectomia\"],\n  \"medicacion_habitual\": [],\n  \"presion_sistolica\": 132,\n  \"presion_diastolica\": 80,\n  \"frecuencia_cardiaca\": 102,\n  \"frecuencia_respiratoria\": 16,\n  \"saturacion_oxigeno\": 99.0,\n  \"temperatura\": 36.5,\n  \"nivel_dolor\": 6,\n  \"duracion_sintomas\": \"esta manana\",\n  \"metodo_llegada\": \"autonomo\"\n}",
+    "llm_raw_json": {
+      "edad": 34,
+      "sexo": "F",
+      "sintomas_presentes": [
+        "abdominal pain",
+        "vomiting",
+        "constipation"
+      ],
+      "patologias_previas": [
+        "laminectomia"
+      ],
+      "medicacion_habitual": [],
+      "presion_sistolica": 132,
+      "presion_diastolica": 80,
+      "frecuencia_cardiaca": 102,
+      "frecuencia_respiratoria": 16,
+      "saturacion_oxigeno": 99.0,
+      "temperatura": 36.5,
+      "nivel_dolor": 6,
+      "duracion_sintomas": "esta manana",
+      "metodo_llegada": "autonomo"
+    }
+  },
+  {
+    "case_id": "caso_3",
+    "llm_raw_content": "{\n  \"edad\": 28,\n  \"sexo\": \"F\",\n  \"sintomas_presentes\": [\"conjunctivitis\"],\n  \"patologias_previas\": [],\n  \"medicacion_habitual\": [],\n  \"presion_sistolica\": 116,\n  \"presion_diastolica\": 72,\n  \"frecuencia_cardiaca\": 74,\n  \"frecuencia_respiratoria\": 16,\n  \"saturacion_oxigeno\": 99.0,\n  \"temperatura\": 36.4,\n  \"nivel_dolor\": 1,\n  \"duracion_sintomas\": \"2 dias\",\n  \"metodo_llegada\": \"autonomo\"\n}",
+    "llm_raw_json": {
+      "edad": 28,
+      "sexo": "F",
+      "sintomas_presentes": [
+        "conjunctivitis"
+      ],
+      "patologias_previas": [],
+      "medicacion_habitual": [],
+      "presion_sistolica": 116,
+      "presion_diastolica": 72,
+      "frecuencia_cardiaca": 74,
+      "frecuencia_respiratoria": 16,
+      "saturacion_oxigeno": 99.0,
+      "temperatura": 36.4,
+      "nivel_dolor": 1,
+      "duracion_sintomas": "2 dias",
+      "metodo_llegada": "autonomo"
+    }
+  }
+]

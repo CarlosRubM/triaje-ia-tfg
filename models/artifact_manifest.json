@@ -1,0 +1,15 @@
+{
+  "artifacts": [
+    {
+      "path": "models/lgbm_bert_final.joblib",
+      "size_bytes": 15264757,
+      "sha256": "9d26001cc1115cb1f1d980c44676d2df0a198ddd775ec11dd450315506b420d4"
+    },
+    {
+      "path": "data/processed/bert_svd.joblib",
+      "size_bytes": 43690,
+      "sha256": "2d513b235610e699a83a2829f0e9825d0307a428d1a91f440f96da405140b029"
+    }
+  ],
+  "note": "Artefactos finales congelados para reproducir la inferencia de la aplicacion."
+}

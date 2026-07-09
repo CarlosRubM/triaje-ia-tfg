@@ -1,0 +1,17 @@
+[Unit]
+Description=Streamlit triaje-ia-tfg
+After=network-online.target ollama.service
+Wants=network-online.target ollama.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/triaje-ia-tfg
+EnvironmentFile=/root/.env-production
+ExecStartPre=/bin/sh -c 'until curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; do sleep 2; done'
+ExecStart=/root/.local/bin/uv run streamlit run src/triaje_ia/ui/app.py \
+    --server.port=8080 --server.address=127.0.0.1 --server.headless=true
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

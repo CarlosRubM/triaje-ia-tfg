@@ -1,0 +1,19 @@
+{
+  "policy": "argmax_with_a1_warning",
+  "threshold_a1": 0.4,
+  "minimum_allowed_threshold_a1": 0.2,
+  "class_weights": [
+    0.9862904766905024,
+    1.0815748123183635,
+    1.0646831181033427,
+    0.9614816951520226,
+    0.9325876579119892
+  ],
+  "primary_policy_option": "argmax",
+  "warning_policy_option": "argmax_with_a1_warning",
+  "warning_threshold_a1": 0.4,
+  "alternative_policy_option": "threshold_a1_then_weighted_argmax",
+  "policy_options_evaluated_on": "OOF train probabilities only",
+  "policy_sensitivity_oof_path": "data\\processed\\policy_sensitivity_oof.parquet",
+  "calibrated_on": "OOF train probabilities only"
+}

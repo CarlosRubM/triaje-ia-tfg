@@ -1,0 +1,17 @@
+feature,H,p,eta2,decision
+age,24502.7,0.0,0.0586,mantener
+qsofa,18074.6,0.0,0.04322,mantener
+pain,18059.6,0.0,0.04319,mantener
+n_medicamentos,16662.5,0.0,0.03984,mantener
+news2,11498.6,0.0,0.02749,revisar
+n_vitales_anomalos,11065.1,0.0,0.02646,revisar
+o2sat,9936.6,0.0,0.02376,revisar
+resprate,7054.8,0.0,0.01686,revisar
+heartrate,3533.9,0.0,0.00844,descartar
+pulse_pressure,1374.0,0.0,0.00328,descartar
+dbp,1223.4,0.0,0.00292,descartar
+sbp,1037.1,0.0,0.00247,descartar
+visitas_ultimo_año,1035.5,0.0,0.00247,descartar
+n_visitas_previas,999.8,0.0,0.00238,descartar
+visitas_ultimo_mes,507.5,0.0,0.0012,descartar
+dias_desde_ultima_visita,418.8,0.0,0.00099,descartar

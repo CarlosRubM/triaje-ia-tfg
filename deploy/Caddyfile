@@ -1,0 +1,13 @@
+# Reverse proxy con HTTPS automático (Let's Encrypt) y basicauth.
+#
+# Antes de arrancar Caddy, genera el hash de la contraseña:
+#     caddy hash-password
+# y pégalo sustituyendo <PEGAR_HASH_AQUI> en la línea basicauth.
+# El usuario sugerido es "triaje".
+
+triaje.duckdns.org {
+	basicauth {
+		triaje <PEGAR_HASH_AQUI>
+	}
+	reverse_proxy 127.0.0.1:8080
+}

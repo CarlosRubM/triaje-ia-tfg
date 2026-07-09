@@ -1,6 +1,6 @@
 """
 src/triaje_ia/data/features.py
-────────────────────────────────
+
 Ingeniería de features sobre el dataset base producido por loader.py + cleaner.py.
 Produce un DataFrame con las 88 features definitivas listas para entrenar.
 
@@ -64,30 +64,21 @@ Notas de implementación:
   - NaN nativos en vitales: XGBoost/LightGBM/RF los manejan sin imputación
   - Temperatura en °F en MIMIC — umbral fiebre ≥100.4°F (38.0°C)
   - NEWS2 vectorizado con np.select (validado, H idéntico al iterativo)
-  - Bloque 6 vectorizado con isin() + cummax() — O(n log n), ~1.3s sobre 425K filas
+  - Bloque 6 vectorizado con isin() + cummax()
 """
-
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from loguru import logger
 
+from triaje_ia.config import DATA_INTERIM, DATA_PROCESSED
 
-# ── Rutas ─────────────────────────────────────────────────────────────────────
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DATA_INTERIM = PROJECT_ROOT / "data" / "interim"
-DATA_RAW     = PROJECT_ROOT / "data" / "raw"
-
-# ── Constantes clínicas ───────────────────────────────────────────────────────
+# Constantes clínicas
 
 # Umbrales vitales (°F para temperatura, unidades estándar para el resto)
 UMBRAL_FIEBRE_F        = 100.4   # ≥ 100.4°F = 38.0°C
-UMBRAL_HIPOTERMIA_F    = 96.0    # < 96.0°F  = 35.6°C
 UMBRAL_TAQUICARDIA     = 100
-UMBRAL_BRADICARDIA     = 60
 UMBRAL_TAQUIPNEA_GRAVE = 24
-UMBRAL_BRADIPNEA       = 10
 UMBRAL_O2SAT_BAJO      = 92
 UMBRAL_HIPOTENSION     = 90
 UMBRAL_HTA_SEVERA      = 180
@@ -99,9 +90,6 @@ UMBRAL_ANCIANO_MAYOR   = 75
 UMBRAL_NEWS2_ALTO      = 7
 UMBRAL_VITALES_CRITICOS = 2
 UMBRAL_FRECUENTADOR    = 3       # visitas en 30 días
-
-# Paleta de colores para gráficos (acuity 1=rojo → 5=azul)
-COLORES_ACUITY = ["#C0392B", "#E67E22", "#F1C40F", "#27AE60", "#2980B9"]
 
 # Macro-flags CCS — códigos reales disponibles en MIMIC-IV-ED (83 categorías)
 CCS_MACROFLAGS: dict[str, list[int]] = {
@@ -116,7 +104,7 @@ CCS_MACROFLAGS: dict[str, list[int]] = {
     "hx_trauma_muscular":  [204, 205, 228, 229, 230, 231, 232, 233, 235, 236, 238, 239, 244],
 }
 
-# Lista definitiva de features para 04_models.ipynb
+# Lista definitiva de features del modelo final
 FEATURES_CONTINUAS: list[str] = [
     "pain", "o2sat", "resprate", "heartrate", "dbp", "sbp",
     "qsofa", "news2", "n_vitales_anomalos", "pulse_pressure",
@@ -173,10 +161,7 @@ TODAS_FEATURES: list[str] = (
 
 TARGET = "acuity"
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # BLOQUE 1 — Vitales, scores y banderas clínicas
-# ══════════════════════════════════════════════════════════════════════════════
 
 def _calcular_missingness_vitales(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -188,9 +173,8 @@ def _calcular_missingness_vitales(df: pd.DataFrame) -> pd.DataFrame:
     df["temperature_missing"] = df["temperature"].isna().astype("int8")
     df["o2sat_missing"]       = df["o2sat"].isna().astype("int8")
     df["pain_missing"]        = df["pain"].isna().astype("int8")
-    logger.debug("Missingness vitales calculado")
+    logger.info("Missingness vitales calculado")
     return df
-
 
 def _calcular_banderas_vitales(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -210,15 +194,15 @@ def _calcular_banderas_vitales(df: pd.DataFrame) -> pd.DataFrame:
     # pero NO se incluye en FEATURES_BINARIAS (correlación r=0.925 con n_vitales_anomalos)
     df["_taquicardia_aux"]  = (df["heartrate"] > UMBRAL_TAQUICARDIA).astype("int8")
 
-    logger.debug("Banderas vitales calculadas")
+    logger.info("Banderas vitales calculadas")
     return df
-
 
 def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
     """
     Scores clínicos compuestos vectorizados.
     NEWS2 implementado con np.select (validado, H idéntico al iterativo).
-    qSOFA usa pain_missing como proxy de alteración del nivel de consciencia.
+    MIMIC-IV-ED no registra GCS/AVPU estructurado en triaje; el componente
+    neurológico se omite para no introducir proxies AMS sesgados.
     """
     df = df.copy()
 
@@ -228,7 +212,7 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
     hr  = df["heartrate"].values
     tmp = df["temperature"].values  # °F
 
-    # ── NEWS2 vectorizado ─────────────────────────────────────────────────────
+    # NEWS2 vectorizado
     score = np.zeros(len(df))
 
     score += np.select(
@@ -252,21 +236,18 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
         [np.isnan(tmp), tmp <= 95.0, tmp <= 96.8, tmp <= 100.4, tmp <= 102.2],
         [0, 3, 1, 0, 1], default=2
     )
-    score += np.where(df["pain_missing"].values == 1, 3, 0)
-
     df["news2"]      = score
     df["news2_alto"] = (score >= UMBRAL_NEWS2_ALTO).astype("int8")
 
-    # ── qSOFA vectorizado ─────────────────────────────────────────────────────
+    # qSOFA vectorizado
     qsofa = np.zeros(len(df))
     qsofa += np.where(np.nan_to_num(rr) >= 22, 1, 0)
     qsofa += np.where(np.nan_to_num(sbp) <= 100, 1, 0)
-    qsofa += df["pain_missing"].values  # proxy AMS
 
     df["qsofa"]          = qsofa
     df["qsofa_positivo"] = (qsofa >= 2).astype("int8")
 
-    # ── Shock index ───────────────────────────────────────────────────────────
+    # Shock index
     si = np.where(
         (np.isnan(hr) | np.isnan(sbp) | (sbp == 0)),
         np.nan,
@@ -279,10 +260,10 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
         (np.nan_to_num(si, nan=0) >= UMBRAL_SHOCK_ANCIANO)
     ).astype("int8")
 
-    # ── Pulse pressure ────────────────────────────────────────────────────────
+    # Pulse pressure
     df["pulse_pressure"] = df["sbp"] - df["dbp"]
 
-    # ── Vitales críticos (≥2 de 5 banderas) ──────────────────────────────────
+    # Vitales críticos (≥2 de 5 banderas)
     df["vitales_criticos"] = (
         df["_taquicardia_aux"].fillna(0) +
         df["taquipnea_grave"].fillna(0) +
@@ -292,7 +273,7 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
     ).astype("int8")
     df["vitales_criticos"] = (df["vitales_criticos"] >= UMBRAL_VITALES_CRITICOS).astype("int8")
 
-    # ── n_vitales_anomalos (conteo continuo) ──────────────────────────────────
+    # n_vitales_anomalos (conteo continuo)
     df["n_vitales_anomalos"] = (
         df["_taquicardia_aux"].fillna(0) +
         df["taquipnea_grave"].fillna(0) +
@@ -301,7 +282,7 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
         df["shock_index_alto"].fillna(0)
     ).astype("int8")
 
-    # ── SIRS positivo (≥2 criterios) ─────────────────────────────────────────
+    # SIRS positivo (≥2 criterios)
     sirs_taquicardia  = df["_taquicardia_aux"].fillna(0)
     sirs_taquipnea    = (np.nan_to_num(rr) > 20).astype(int)
     sirs_temperatura  = (
@@ -311,7 +292,7 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
     sirs_score = sirs_taquicardia + sirs_taquipnea + sirs_temperatura
     df["sirs_positivo"] = (sirs_score >= 2).astype("int8")
 
-    # ── Zona verde (todos los vitales normales) ───────────────────────────────
+    # Zona verde (todos los vitales normales)
     df["zona_verde"] = (
         (np.nan_to_num(hr, nan=999) >= 60)  & (np.nan_to_num(hr, nan=999) <= 100) &
         (np.nan_to_num(rr, nan=999) >= 12)  & (np.nan_to_num(rr, nan=999) <= 20)  &
@@ -321,9 +302,8 @@ def _calcular_scores_compuestos(df: pd.DataFrame) -> pd.DataFrame:
         (df["pain_missing"] == 0)
     ).astype("int8")
 
-    logger.debug("Scores compuestos calculados")
+    logger.info("Scores compuestos calculados")
     return df
-
 
 def calcular_features_bloque1(df: pd.DataFrame) -> pd.DataFrame:
     """Orquestador Bloque 1: missingness + banderas + scores."""
@@ -335,10 +315,7 @@ def calcular_features_bloque1(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Bloque 1 completado: missingness + banderas + scores")
     return df
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # BLOQUE 2 — Demográfico y logístico
-# ══════════════════════════════════════════════════════════════════════════════
 
 def calcular_features_bloque2(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -349,16 +326,16 @@ def calcular_features_bloque2(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
-    # ── Edad ──────────────────────────────────────────────────────────────────
+    # Edad
     df["anciano"]       = (df["age"].fillna(0) >= UMBRAL_ANCIANO).astype("int8")
     df["anciano_mayor"] = (df["age"].fillna(0) >= UMBRAL_ANCIANO_MAYOR).astype("int8")
 
-    # ── Identidad desconocida (proxy AMS) ─────────────────────────────────────
+    # Identidad desconocida (proxy AMS)
     df["identidad_desconocida"] = (
         df["race"].astype(str).str.upper().str.strip() == "UNKNOWN"
     ).astype("int8")
 
-    # ── Transporte ────────────────────────────────────────────────────────────
+    # Transporte
     transport = df["arrival_transport"].astype(str).str.upper().str.strip()
     df["llegada_autonoma"]    = transport.isin(["WALK IN", "OTHER"]).astype("int8")
     df["llegada_ambulancia"]  = (transport == "AMBULANCE").astype("int8")
@@ -368,10 +345,7 @@ def calcular_features_bloque2(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Bloque 2 completado: demográfico y logístico")
     return df
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # BLOQUE 3 — Medicación (clases ATC)
-# ══════════════════════════════════════════════════════════════════════════════
 
 def calcular_features_bloque3(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -387,7 +361,7 @@ def calcular_features_bloque3(df: pd.DataFrame) -> pd.DataFrame:
     df   = df.copy()
     med  = df["medicacion_raw"].fillna("").str.lower()
 
-    # ── Clases individuales ───────────────────────────────────────────────────
+    # Clases individuales
     df["med_anticoagulante"] = (
         med.str.contains("anticoagulants - coumarin",         case=False, na=False) |
         med.str.contains("low molecular weight heparins",      case=False, na=False) |
@@ -500,12 +474,12 @@ def calcular_features_bloque3(df: pd.DataFrame) -> pd.DataFrame:
         med.str.contains("antiarrhythmic - class iii",          case=False, na=False)
     ).astype("int8")
 
-    # ── AINE (solo componente de super-flags) ─────────────────────────────────
+    # AINE (solo componente de super-flags)
     _aine = (
         med.str.contains("nsaid analgesics",                   case=False, na=False)
     ).astype("int8")
 
-    # ── Super-flags ───────────────────────────────────────────────────────────
+    # Super-flags
     df["alto_riesgo_sangrado"] = (
         (df["med_anticoagulante"] == 1) |
         ((df["med_antiagregante"] == 1) & (_aine == 1)) |
@@ -528,10 +502,7 @@ def calcular_features_bloque3(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Bloque 3 completado: 18 flags ATC + 3 super-flags")
     return df
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # BLOQUE 4 — Polifarmacia
-# ══════════════════════════════════════════════════════════════════════════════
 
 def calcular_features_bloque4(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -548,10 +519,7 @@ def calcular_features_bloque4(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Bloque 4 completado: polifarmacia")
     return df
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # BLOQUE 5 — Chief complaint (13 síndromes clínicos)
-# ══════════════════════════════════════════════════════════════════════════════
 
 def calcular_features_bloque5(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -658,11 +626,7 @@ def calcular_features_bloque5(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Bloque 5 completado: 13 síndromes chief complaint")
     return df
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # BLOQUE 6 — Historial ED y comorbilidades CCS
-# ══════════════════════════════════════════════════════════════════════════════
-
 
 def _calcular_frecuentacion(edstays: pd.DataFrame) -> pd.DataFrame:
     """
@@ -703,7 +667,6 @@ def _calcular_frecuentacion(edstays: pd.DataFrame) -> pd.DataFrame:
     )
     return es
 
-
 def _calcular_comorbilidades_ccs(
     edstays: pd.DataFrame,
     label_map_ccs: pd.DataFrame,
@@ -714,20 +677,16 @@ def _calcular_comorbilidades_ccs(
     Regla lookback: outtime_previa < intime_actual.
     """
     es = edstays.sort_values(["subject_id", "intime"]).copy().reset_index(drop=True)
-    es = es.merge(label_map_ccs[["stay_id", "ccs_id"]], on="stay_id", how="left")
 
     for flag, codigos in CCS_MACROFLAGS.items():
         stays_con_flag = label_map_ccs[label_map_ccs["ccs_id"].isin(codigos)]["stay_id"]
         es[f"_{flag}_now"] = es["stay_id"].isin(stays_con_flag).astype("int8")
-        shifted = es.groupby("subject_id")[f"_{flag}_now"].shift(1).fillna(0)
-        es[flag] = es.groupby("subject_id")[shifted.name if hasattr(shifted, 'name') else f"_{flag}_now"].transform(
-            lambda x: x.shift(1).fillna(0).cummax()
-        ).astype("int8")
-        es.drop(columns=[f"_{flag}_now"], inplace=True, errors="ignore")
+        es[flag] = es.groupby("subject_id")[f"_{flag}_now"].shift(1).fillna(0)
+        es[flag] = es.groupby("subject_id")[flag].cummax().astype("int8")
+        es.drop(columns=[f"_{flag}_now"], inplace=True)
 
     logger.info(f"Comorbilidades CCS: {len(CCS_MACROFLAGS)} macro-flags calculadas")
     return es
-
 
 def calcular_features_bloque6(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -764,10 +723,7 @@ def calcular_features_bloque6(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Bloque 6 completado: frecuentación + comorbilidades CCS")
     return df
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # Orquestador principal
-# ══════════════════════════════════════════════════════════════════════════════
 
 def calcular_todas_las_features(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -798,22 +754,25 @@ def calcular_todas_las_features(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-
 def cargar_features(forzar: bool = False) -> pd.DataFrame:
     """
-    Pipeline completo con caché: raw → limpieza → features.
-    Usa data/processed/dataset_features.parquet si existe.
+    Pipeline completo con caché: raw → limpieza → features → dataset_features.parquet.
+
+    Utilidad standalone para obtener las 88 features sin pasar por los notebooks.
+    El flujo de entrenamiento habitual (notebooks 06/07) carga normalmente los
+    artefactos generados en ``05b_feature_validation.ipynb`` (split temporal),
+    mientras que ``05_feature_engineering.ipynb`` exporta el espacio completo
+    de características (p. ej. ``dataset_features.parquet``).
 
     Args:
-        forzar: Recalcula aunque exista el caché.
+        forzar: Si True, recalcula aunque exista el caché.
 
     Returns:
-        DataFrame con las 88 features + target listo para 04_models.ipynb.
+        DataFrame con TODAS_FEATURES + TARGET (88 + 1 columnas).
     """
-    from triaje_ia.data.loader  import cargar_dataset_base
     from triaje_ia.data.cleaner import limpiar_dataset
+    from triaje_ia.data.loader import cargar_dataset_base
 
-    DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     cache = DATA_PROCESSED / "dataset_features.parquet"
 
@@ -833,3 +792,57 @@ def cargar_features(forzar: bool = False) -> pd.DataFrame:
     df[TODAS_FEATURES + [TARGET]].to_parquet(cache, index=False)
     logger.success(f"Guardado en {cache}: {len(df):,} filas | {len(TODAS_FEATURES)} features")
     return df
+
+# --- Utilidades de Persistencia de Métricas ---
+
+def update_metrics_json(feature, decision_final=None, H=None, eta2=None, V_cramer=None, **extra):
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    # Resolviendo ARTIFACTS_DIR relativo a este archivo (src/triaje_ia/data/features.py)
+    # asumiendo que artifacts está en la raíz del proyecto
+    ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+    ARTIFACTS_DIR = ROOT_DIR / "artifacts"
+    ARTIFACTS_DIR.mkdir(exist_ok=True)
+    METRICS_FILE = ARTIFACTS_DIR / "feature_metrics.json"
+
+    if not METRICS_FILE.exists():
+        with open(METRICS_FILE, "w", encoding="utf-8") as f:
+            json.dump({"version": "1.0", "features_con_metricas": {}}, f, indent=2, ensure_ascii=False)
+
+    with open(METRICS_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if "features_con_metricas" not in data or not isinstance(data["features_con_metricas"], dict):
+        data["features_con_metricas"] = {}
+
+    data.setdefault("version", "1.0")
+    data["ultima_actualizacion"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    if feature not in data["features_con_metricas"]:
+        data["features_con_metricas"][feature] = {
+            "decision_final": "pendiente",
+            "H": None,
+            "eta2": None,
+            "V_cramer": None,
+        }
+
+    entry = data["features_con_metricas"][feature]
+
+    if decision_final is not None:
+        entry["decision_final"] = decision_final
+    if H is not None:
+        entry["H"] = H
+    if eta2 is not None:
+        entry["eta2"] = eta2
+    if V_cramer is not None:
+        entry["V_cramer"] = V_cramer
+
+    for k, v in extra.items():
+        if v is None:
+            continue
+        entry[k] = v
+
+    with open(METRICS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)

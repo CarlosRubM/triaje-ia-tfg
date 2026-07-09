@@ -1,0 +1,10 @@
+{
+  "id": "final_bert_argmax_alerta_a1_040",
+  "artifacts": {
+    "classifier": "lgbm_bert_final.joblib",
+    "feature_list": "feature_list.json",
+    "thresholds": "thresholds.json",
+    "bert_svd": "../data/processed/bert_svd.joblib",
+    "production_assumptions": "production_assumptions.json"
+  }
+}

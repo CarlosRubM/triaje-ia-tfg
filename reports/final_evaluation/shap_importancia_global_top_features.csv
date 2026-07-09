@@ -1,0 +1,80 @@
+feature,feature_es,mean_abs_shap
+llegada_ambulancia,Llegada en ambulancia,0.225734800360034
+cc_neuro_ams,Alteración neurológica / mental,0.16020097929856428
+bert_svd_05,Componente semántico 5,0.156993275219868
+bert_svd_08,Componente semántico 8,0.14411922180907782
+news2,NEWS2 adaptado,0.140042366509051
+cc_gi_agudo,Motivo gastrointestinal agudo,0.13893218373141097
+age,Edad,0.13274890139200654
+pain,Dolor referido,0.11994168566298777
+n_medicamentos,Número de medicamentos,0.10927325160668488
+bert_svd_03,Componente semántico 3,0.10688631298628952
+bert_svd_13,Componente semántico 13,0.10679603833449651
+bert_svd_04,Componente semántico 4,0.10597779043113718
+bert_svd_02,Componente semántico 2,0.09656666302992364
+cc_derivacion_urgente,Derivación urgente / pruebas alteradas,0.09382139238717181
+bert_svd_01,Componente semántico 1,0.09224180579317372
+cc_dolor_toracico,Dolor torácico,0.08364844034479897
+resprate,Frecuencia respiratoria,0.0802177216599404
+bert_svd_07,Componente semántico 7,0.06830786026402956
+bert_svd_12,Componente semántico 12,0.06338569689981968
+sbp,Presión arterial sistólica,0.05832547973998969
+n_vitales_anomalos,Constantes vitales anómalas,0.0573606102127466
+cc_disnea,Disnea,0.05667875114458537
+bert_svd_06,Componente semántico 6,0.052746491017477276
+bert_svd_00,Componente semántico 0,0.05203982236958206
+bert_svd_10,Componente semántico 10,0.04902382395984303
+n_visitas_previas,Visitas previas,0.04874498724690786
+bert_svd_09,Componente semántico 9,0.03650555358164275
+dias_desde_ultima_visita,Días desde la última visita,0.03580176025579896
+bert_svd_11,Componente semántico 11,0.03434915587534111
+o2sat,Saturación de oxígeno,0.0340459362061417
+cc_psiquiatrico,Motivo psiquiátrico,0.03322421183145125
+hx_trauma_muscular,Antecedente traumático/muscular,0.03312978662201326
+bert_svd_14,Componente semántico 14,0.032159653748935604
+temperature_missing,Temperatura no registrada,0.030956400410060765
+med_opiaceo,Opiáceos,0.025827720581939155
+zona_verde,Zona verde,0.022756901389413962
+med_betabloqueante,Betabloqueantes,0.020077144140576302
+cc_infeccioso,Motivo infeccioso,0.018221071371411452
+cc_urologico,Motivo urológico,0.016935209654393393
+visitas_ultimo_año,Visitas en el último año,0.014152644978913102
+visitas_ultimo_mes,Visitas en el último mes,0.013937869971704084
+med_diuretico_asa,Diurético de asa,0.013935608499670283
+alto_riesgo_sangrado,Alto riesgo de sangrado,0.013837690319674427
+cc_trauma,Trauma,0.013335439694644364
+cc_hemorragia_activa,Hemorragia activa,0.01173128669387655
+sirs_positivo,SIRS positivo,0.011564675613058758
+pain_missing,Dolor no registrado,0.011564296106873068
+med_antiagregante,Medicación antiagregante,0.010852917240128357
+sin_medicacion,Sin medicación registrada,0.010259876981839777
+med_insulina,Insulina,0.010044948057306588
+shock_index_alto,Índice de shock alto,0.00958124648025554
+cc_cefalea,Cefalea,0.008794534514046647
+llegada_desconocida,Modo de llegada desconocido,0.007615935764592254
+hx_metabolico_renal,Antecedente metabólico/renal,0.007375379835907215
+alto_riesgo_delirium,Alto riesgo de delirium,0.006630882274243863
+med_ace_ara2,IECA/ARA-II,0.006628677684897474
+cc_intoxicacion,Intoxicación,0.006570928393163281
+hx_respiratorio,Antecedente respiratorio,0.006439209606974174
+vitales_criticos,Constantes críticas,0.006071954510121077
+cc_alergia_anafilaxia,Alergia o anafilaxia,0.00606383002931931
+qsofa,qSOFA,0.005119111732269109
+shock_oculto_anciano,Shock oculto en paciente mayor,0.0046523914065405535
+primera_visita,Primera visita registrada,0.004439813000016988
+hx_abuso_sustancias,Antecedente de abuso de sustancias,0.004256377194735807
+med_ssri_snri,ISRS/IRSN,0.0037688884990677127
+med_anticonvulsivante,Anticonvulsivantes,0.0035689485124032667
+hx_psiquiatrico,Antecedente psiquiátrico,0.0033055575589790655
+med_antipsicótico,Antipsicóticos,0.0031600161560758743
+hx_infeccioso,Antecedente infeccioso,0.0029659760403648984
+hx_cardiaco,Antecedente cardiaco,0.0028912115542880546
+hx_neuro,Antecedente neurológico,0.0026621869355831786
+hx_digestivo,Antecedente digestivo,0.0025015599734241095
+frecuentador,Frecuentador,0.001572731363192976
+identidad_desconocida,Identidad desconocida,0.0015598582890734446
+o2sat_missing,Saturación no registrada,0.001537138642639685
+o2sat_bajo_92,Saturación inferior al 92%,0.001013005574607528
+llegada_helicoptero,Llegada en helicóptero,0.0003900481910136252
+taquipnea_grave,Taquipnea grave,0.000322084631282191
+news2_alto,NEWS2 alto,0.00030949886192331734

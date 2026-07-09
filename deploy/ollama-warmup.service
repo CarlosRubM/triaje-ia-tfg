@@ -1,0 +1,11 @@
+[Unit]
+Description=Precarga modelo LLM en RAM (evita cold start)
+After=ollama.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/curl -s http://127.0.0.1:11434/api/generate -d '{"model":"llama3.1:8b-instruct-q4_K_M","keep_alive":-1}'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

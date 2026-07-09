@@ -1,0 +1,723 @@
+{
+  "features_con_metricas": {
+    "pain": {
+      "decision_final": "seleccionada",
+      "H": 18059.6183,
+      "eta2": 0.04319,
+      "V_cramer": null
+    },
+    "o2sat": {
+      "decision_final": "seleccionada",
+      "H": 9936.634,
+      "eta2": 0.02376,
+      "V_cramer": null
+    },
+    "resprate": {
+      "decision_final": "seleccionada",
+      "H": 7054.8258,
+      "eta2": 0.01686,
+      "V_cramer": null
+    },
+    "heartrate": {
+      "decision_final": "descartada",
+      "H": 3533.9363,
+      "eta2": 0.00844,
+      "V_cramer": null
+    },
+    "dbp": {
+      "decision_final": "descartada",
+      "H": 1223.3813,
+      "eta2": 0.00292,
+      "V_cramer": null
+    },
+    "sbp": {
+      "decision_final": "seleccionada",
+      "H": 1037.0648,
+      "eta2": 0.00247,
+      "V_cramer": null
+    },
+    "qsofa": {
+      "decision_final": "seleccionada",
+      "H": 18074.6389,
+      "eta2": 0.04322,
+      "V_cramer": null
+    },
+    "news2": {
+      "decision_final": "seleccionada",
+      "H": 11498.5839,
+      "eta2": 0.02749,
+      "V_cramer": null
+    },
+    "n_vitales_anomalos": {
+      "decision_final": "seleccionada",
+      "H": 11065.078,
+      "eta2": 0.02646,
+      "V_cramer": null
+    },
+    "pulse_pressure": {
+      "decision_final": "descartada",
+      "H": 1374.0462,
+      "eta2": 0.00328,
+      "V_cramer": null
+    },
+    "age": {
+      "decision_final": "seleccionada",
+      "H": 24502.6925,
+      "eta2": 0.0586,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "n_medicamentos": {
+      "decision_final": "seleccionada",
+      "H": 16662.5013,
+      "eta2": 0.03984,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "n_visitas_previas": {
+      "decision_final": "descartada",
+      "H": 999.7759,
+      "eta2": 0.00238,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "visitas_ultimo_mes": {
+      "decision_final": "descartada",
+      "H": 507.5239,
+      "eta2": 0.0012,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "visitas_ultimo_año": {
+      "decision_final": "descartada",
+      "H": 1035.4879,
+      "eta2": 0.00247,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "dias_desde_ultima_visita": {
+      "decision_final": "descartada",
+      "H": 418.846,
+      "eta2": 0.00099,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "temperature_missing": {
+      "decision_final": "seleccionada",
+      "H": 70959.2366,
+      "eta2": null,
+      "V_cramer": 0.41196
+    },
+    "o2sat_missing": {
+      "decision_final": "seleccionada",
+      "H": 61864.6568,
+      "eta2": null,
+      "V_cramer": 0.38465
+    },
+    "pain_missing": {
+      "decision_final": "seleccionada",
+      "H": 43536.7768,
+      "eta2": null,
+      "V_cramer": 0.32268
+    },
+    "o2sat_bajo_92": {
+      "decision_final": "seleccionada",
+      "H": 11908.4318,
+      "eta2": null,
+      "V_cramer": 0.16874
+    },
+    "taquipnea_grave": {
+      "decision_final": "seleccionada",
+      "H": 11007.3396,
+      "eta2": null,
+      "V_cramer": 0.16223
+    },
+    "fiebre": {
+      "decision_final": "descartada",
+      "H": 1049.0084,
+      "eta2": null,
+      "V_cramer": 0.04999
+    },
+    "hipotension": {
+      "decision_final": "descartada",
+      "H": 31104.9362,
+      "eta2": null,
+      "V_cramer": 0.27274
+    },
+    "hipertension_severa": {
+      "decision_final": "descartada",
+      "H": 1038.6921,
+      "eta2": null,
+      "V_cramer": 0.04975
+    },
+    "qsofa_positivo": {
+      "decision_final": "descartada",
+      "H": 2740.0223,
+      "eta2": null,
+      "V_cramer": 0.08089
+    },
+    "news2_alto": {
+      "decision_final": "seleccionada",
+      "H": 9663.1146,
+      "eta2": null,
+      "V_cramer": 0.152
+    },
+    "shock_index_alto": {
+      "decision_final": "seleccionada",
+      "H": 18218.5897,
+      "eta2": null,
+      "V_cramer": 0.20872
+    },
+    "shock_oculto_anciano": {
+      "decision_final": "seleccionada",
+      "H": 9129.0049,
+      "eta2": null,
+      "V_cramer": 0.14773
+    },
+    "vitales_criticos": {
+      "decision_final": "seleccionada",
+      "H": 18407.2845,
+      "eta2": null,
+      "V_cramer": 0.2098
+    },
+    "sirs_positivo": {
+      "decision_final": "seleccionada",
+      "H": 5188.4747,
+      "eta2": null,
+      "V_cramer": 0.11136
+    },
+    "zona_verde": {
+      "decision_final": "seleccionada",
+      "H": 14388.6731,
+      "eta2": null,
+      "V_cramer": 0.18549
+    },
+    "anciano": {
+      "decision_final": "descartada",
+      "H": 16612.453,
+      "eta2": null,
+      "V_cramer": 0.19931,
+      "tipo": "binaria"
+    },
+    "anciano_mayor": {
+      "decision_final": "descartada",
+      "H": 11061.1716,
+      "eta2": null,
+      "V_cramer": 0.16262,
+      "tipo": "binaria"
+    },
+    "identidad_desconocida": {
+      "decision_final": "seleccionada",
+      "H": 5949.0863,
+      "eta2": null,
+      "V_cramer": 0.11924,
+      "tipo": "binaria"
+    },
+    "llegada_autonoma": {
+      "decision_final": "descartada",
+      "H": 31021.0095,
+      "eta2": null,
+      "V_cramer": 0.27237,
+      "tipo": "binaria"
+    },
+    "llegada_ambulancia": {
+      "decision_final": "seleccionada",
+      "H": 27296.9433,
+      "eta2": null,
+      "V_cramer": 0.2555,
+      "tipo": "binaria"
+    },
+    "llegada_helicoptero": {
+      "decision_final": "seleccionada",
+      "H": 3217.5213,
+      "eta2": null,
+      "V_cramer": 0.08767,
+      "tipo": "binaria"
+    },
+    "llegada_desconocida": {
+      "decision_final": "seleccionada",
+      "H": 6225.034,
+      "eta2": null,
+      "V_cramer": 0.12198,
+      "tipo": "binaria"
+    },
+    "med_anticoagulante": {
+      "decision_final": "descartada",
+      "H": 5023.2785,
+      "eta2": null,
+      "V_cramer": 0.10957,
+      "tipo": "binaria"
+    },
+    "med_antiagregante": {
+      "decision_final": "seleccionada",
+      "H": 8274.9833,
+      "eta2": null,
+      "V_cramer": 0.14065,
+      "tipo": "binaria"
+    },
+    "med_insulina": {
+      "decision_final": "seleccionada",
+      "H": 2489.9825,
+      "eta2": null,
+      "V_cramer": 0.07711,
+      "tipo": "binaria"
+    },
+    "med_antidiabetico_oral": {
+      "decision_final": "descartada",
+      "H": 1013.5736,
+      "eta2": null,
+      "V_cramer": 0.04914,
+      "tipo": "binaria"
+    },
+    "med_corticoide_sistemico": {
+      "decision_final": "descartada",
+      "H": 975.2448,
+      "eta2": null,
+      "V_cramer": 0.0482,
+      "tipo": "binaria"
+    },
+    "med_opiaceo": {
+      "decision_final": "seleccionada",
+      "H": 2504.9799,
+      "eta2": null,
+      "V_cramer": 0.07734,
+      "tipo": "binaria"
+    },
+    "med_benzodiacepina": {
+      "decision_final": "descartada",
+      "H": 2808.6009,
+      "eta2": null,
+      "V_cramer": 0.0819,
+      "tipo": "binaria"
+    },
+    "med_betabloqueante": {
+      "decision_final": "seleccionada",
+      "H": 10278.8096,
+      "eta2": null,
+      "V_cramer": 0.15676,
+      "tipo": "binaria"
+    },
+    "med_ace_ara2": {
+      "decision_final": "seleccionada",
+      "H": 5141.0796,
+      "eta2": null,
+      "V_cramer": 0.11085,
+      "tipo": "binaria"
+    },
+    "med_diuretico_asa": {
+      "decision_final": "seleccionada",
+      "H": 6746.4895,
+      "eta2": null,
+      "V_cramer": 0.12699,
+      "tipo": "binaria"
+    },
+    "med_diuretico_tiazida": {
+      "decision_final": "descartada",
+      "H": 247.5334,
+      "eta2": null,
+      "V_cramer": 0.02413,
+      "tipo": "binaria"
+    },
+    "med_antipsicótico": {
+      "decision_final": "seleccionada",
+      "H": 2431.7642,
+      "eta2": null,
+      "V_cramer": 0.0762,
+      "tipo": "binaria"
+    },
+    "med_ssri_snri": {
+      "decision_final": "seleccionada",
+      "H": 3343.825,
+      "eta2": null,
+      "V_cramer": 0.08938,
+      "tipo": "binaria"
+    },
+    "med_anticonvulsivante": {
+      "decision_final": "seleccionada",
+      "H": 2366.012,
+      "eta2": null,
+      "V_cramer": 0.07516,
+      "tipo": "binaria"
+    },
+    "med_respiratorio_inhalado": {
+      "decision_final": "descartada",
+      "H": 1296.2301,
+      "eta2": null,
+      "V_cramer": 0.05559,
+      "tipo": "binaria"
+    },
+    "med_inmunosupresor": {
+      "decision_final": "descartada",
+      "H": 714.4707,
+      "eta2": null,
+      "V_cramer": 0.04122,
+      "tipo": "binaria"
+    },
+    "med_antiaritmico": {
+      "decision_final": "descartada",
+      "H": 1083.2821,
+      "eta2": null,
+      "V_cramer": 0.05081,
+      "tipo": "binaria"
+    },
+    "alto_riesgo_sangrado": {
+      "decision_final": "seleccionada",
+      "H": 4418.522,
+      "eta2": null,
+      "V_cramer": 0.10275,
+      "tipo": "binaria"
+    },
+    "alto_riesgo_delirium": {
+      "decision_final": "seleccionada",
+      "H": 4049.9401,
+      "eta2": null,
+      "V_cramer": 0.09837,
+      "tipo": "binaria"
+    },
+    "riesgo_depresion_resp": {
+      "decision_final": "descartada",
+      "H": 2050.5009,
+      "eta2": null,
+      "V_cramer": 0.06996,
+      "tipo": "binaria"
+    },
+    "sin_medicacion": {
+      "decision_final": "seleccionada",
+      "H": 9827.0477,
+      "eta2": null,
+      "V_cramer": 0.15328,
+      "tipo": "binaria"
+    },
+    "polifarmacia": {
+      "decision_final": "descartada",
+      "H": 14685.089,
+      "eta2": null,
+      "V_cramer": 0.18739,
+      "tipo": "binaria"
+    },
+    "hiperpolifarmacia": {
+      "decision_final": "descartada",
+      "H": 9247.2802,
+      "eta2": null,
+      "V_cramer": 0.14869,
+      "tipo": "binaria"
+    },
+    "cc_dolor_toracico": {
+      "decision_final": "seleccionada",
+      "H": 12706.7089,
+      "eta2": null,
+      "V_cramer": 0.1743,
+      "tipo": "binaria"
+    },
+    "cc_disnea": {
+      "decision_final": "seleccionada",
+      "H": 13008.2964,
+      "eta2": null,
+      "V_cramer": 0.17636,
+      "tipo": "binaria"
+    },
+    "cc_gi_agudo": {
+      "decision_final": "seleccionada",
+      "H": 18161.3629,
+      "eta2": null,
+      "V_cramer": 0.2084,
+      "tipo": "binaria"
+    },
+    "cc_neuro_ams": {
+      "decision_final": "seleccionada",
+      "H": 15744.7756,
+      "eta2": null,
+      "V_cramer": 0.19403,
+      "tipo": "binaria"
+    },
+    "cc_cefalea": {
+      "decision_final": "descartada",
+      "H": 890.4522,
+      "eta2": null,
+      "V_cramer": 0.04605,
+      "tipo": "binaria"
+    },
+    "cc_trauma": {
+      "decision_final": "seleccionada",
+      "H": 5923.2457,
+      "eta2": null,
+      "V_cramer": 0.11899,
+      "tipo": "binaria"
+    },
+    "cc_psiquiatrico": {
+      "decision_final": "seleccionada",
+      "H": 13677.2552,
+      "eta2": null,
+      "V_cramer": 0.18084,
+      "tipo": "binaria"
+    },
+    "cc_intoxicacion": {
+      "decision_final": "descartada",
+      "H": 834.8415,
+      "eta2": null,
+      "V_cramer": 0.04458,
+      "tipo": "binaria"
+    },
+    "cc_infeccioso": {
+      "decision_final": "descartada",
+      "H": 1293.3137,
+      "eta2": null,
+      "V_cramer": 0.05553,
+      "tipo": "binaria"
+    },
+    "cc_urologico": {
+      "decision_final": "seleccionada",
+      "H": 3905.038,
+      "eta2": null,
+      "V_cramer": 0.09659,
+      "tipo": "binaria"
+    },
+    "cc_hemorragia_activa": {
+      "decision_final": "descartada",
+      "H": 1683.3287,
+      "eta2": null,
+      "V_cramer": 0.06338,
+      "tipo": "binaria"
+    },
+    "cc_alergia_anafilaxia": {
+      "decision_final": "seleccionada",
+      "H": 1496.4335,
+      "eta2": null,
+      "V_cramer": 0.05975,
+      "tipo": "binaria"
+    },
+    "cc_derivacion_urgente": {
+      "decision_final": "seleccionada",
+      "H": 14482.4,
+      "eta2": null,
+      "V_cramer": 0.18609,
+      "tipo": "binaria"
+    },
+    "primera_visita": {
+      "decision_final": "descartada",
+      "H": 716.3438,
+      "eta2": null,
+      "V_cramer": 0.04128,
+      "tipo": "binaria"
+    },
+    "frecuentador": {
+      "decision_final": "descartada",
+      "H": 473.2726,
+      "eta2": null,
+      "V_cramer": 0.0335,
+      "tipo": "binaria"
+    },
+    "hx_cardiaco": {
+      "decision_final": "seleccionada",
+      "H": 2562.4732,
+      "eta2": null,
+      "V_cramer": 0.07823,
+      "tipo": "binaria"
+    },
+    "hx_respiratorio": {
+      "decision_final": "descartada",
+      "H": 250.6709,
+      "eta2": null,
+      "V_cramer": 0.02429,
+      "tipo": "binaria"
+    },
+    "hx_neuro": {
+      "decision_final": "descartada",
+      "H": 240.7526,
+      "eta2": null,
+      "V_cramer": 0.0238,
+      "tipo": "binaria"
+    },
+    "hx_psiquiatrico": {
+      "decision_final": "descartada",
+      "H": 917.5447,
+      "eta2": null,
+      "V_cramer": 0.04674,
+      "tipo": "binaria"
+    },
+    "hx_abuso_sustancias": {
+      "decision_final": "descartada",
+      "H": 398.1212,
+      "eta2": null,
+      "V_cramer": 0.0307,
+      "tipo": "binaria"
+    },
+    "hx_digestivo": {
+      "decision_final": "descartada",
+      "H": 1612.1552,
+      "eta2": null,
+      "V_cramer": 0.06202,
+      "tipo": "binaria"
+    },
+    "hx_metabolico_renal": {
+      "decision_final": "descartada",
+      "H": 1044.5556,
+      "eta2": null,
+      "V_cramer": 0.04989,
+      "tipo": "binaria"
+    },
+    "hx_infeccioso": {
+      "decision_final": "descartada",
+      "H": 294.776,
+      "eta2": null,
+      "V_cramer": 0.02637,
+      "tipo": "binaria"
+    },
+    "hx_trauma_muscular": {
+      "decision_final": "descartada",
+      "H": 1645.7832,
+      "eta2": null,
+      "V_cramer": 0.06266,
+      "tipo": "binaria"
+    },
+    "riesgo_complejidad_extrema": {
+      "decision_final": "descartada",
+      "H": null,
+      "eta2": null,
+      "V_cramer": 0.04832
+    },
+    "gender": {
+      "decision_final": "descartada",
+      "H": 1735.3127,
+      "eta2": null,
+      "V_cramer": 0.06435,
+      "tipo": "categorica"
+    },
+    "shock_index_severo": {
+      "decision_final": "descartada",
+      "H": 10336.2916,
+      "eta2": null,
+      "V_cramer": null
+    },
+    "med_digoxina": {
+      "decision_final": "descartada",
+      "H": 980.2482,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    },
+    "temperature": {
+      "decision_final": "pendiente",
+      "H": 573.8235,
+      "eta2": 0.00142,
+      "V_cramer": null
+    },
+    "bradipnea": {
+      "decision_final": "pendiente",
+      "H": 164.5556,
+      "eta2": null,
+      "V_cramer": null
+    },
+    "shock_index": {
+      "decision_final": "pendiente",
+      "H": 4564.5178,
+      "eta2": null,
+      "V_cramer": null
+    },
+    "pp_estrecha": {
+      "decision_final": "pendiente",
+      "H": 425.7103,
+      "eta2": null,
+      "V_cramer": null
+    },
+    "pp_amplia": {
+      "decision_final": "pendiente",
+      "H": 903.5813,
+      "eta2": null,
+      "V_cramer": null
+    },
+    "sirs_score": {
+      "decision_final": "pendiente",
+      "H": 5188.4747,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "taquicardia": {
+      "decision_final": "pendiente",
+      "H": 291.0954,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    },
+    "bradicardia": {
+      "decision_final": "pendiente",
+      "H": 291.0954,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    },
+    "msi": {
+      "decision_final": "pendiente",
+      "H": 5250.6123,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "continua_exploratoria"
+    },
+    "asi": {
+      "decision_final": "pendiente",
+      "H": 18217.5407,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "continua_exploratoria"
+    },
+    "borderline_activo": {
+      "decision_final": "pendiente",
+      "H": 1917.0432,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    },
+    "n_vitales_borderline": {
+      "decision_final": "pendiente",
+      "H": 1917.0432,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "hipotermia": {
+      "decision_final": "pendiente",
+      "H": 1038.6921,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    },
+    "hora_llegada": {
+      "decision_final": "pendiente",
+      "H": 348.5169,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "fin_de_semana": {
+      "decision_final": "pendiente",
+      "H": 348.5169,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "continua"
+    },
+    "hora_madrugada": {
+      "decision_final": "pendiente",
+      "H": 7.1509,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    },
+    "med_aine": {
+      "decision_final": "pendiente",
+      "H": 602.2364,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    },
+    "triple_whammy": {
+      "decision_final": "pendiente",
+      "H": 55.0108,
+      "eta2": null,
+      "V_cramer": null,
+      "tipo": "binaria"
+    }
+  },
+  "version": "1.0",
+  "ultima_actualizacion": "2026-05-18T15:12:50+00:00"
+}

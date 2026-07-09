@@ -1,0 +1,82 @@
+[
+  {
+    "case_id": "caso_1",
+    "vector_final_review": {
+      "edad": 78,
+      "sexo": "M",
+      "sintomas_presentes": [
+        "dyspnea",
+        "chest pain"
+      ],
+      "patologias_previas": [
+        "insuficiencia cardiaca",
+        "diabetes tipo 2",
+        "fibrilacion auricular"
+      ],
+      "medicacion_habitual": [
+        "anticoagulants - coumarin",
+        "diuretic - loop",
+        "beta blockers cardiac selective",
+        "insulin analogs"
+      ],
+      "presion_sistolica": 92,
+      "presion_diastolica": 58,
+      "frecuencia_cardiaca": 118,
+      "frecuencia_respiratoria": 30,
+      "saturacion_oxigeno": 88.0,
+      "temperatura": 37.8,
+      "nivel_dolor": 8,
+      "duracion_sintomas": "6 horas",
+      "metodo_llegada": "ambulancia"
+    },
+    "review_changes": []
+  },
+  {
+    "case_id": "caso_2",
+    "vector_final_review": {
+      "edad": 34,
+      "sexo": "F",
+      "sintomas_presentes": [
+        "abdominal pain",
+        "vomiting",
+        "constipation"
+      ],
+      "patologias_previas": [
+        "laminectomia"
+      ],
+      "medicacion_habitual": [],
+      "presion_sistolica": 132,
+      "presion_diastolica": 80,
+      "frecuencia_cardiaca": 102,
+      "frecuencia_respiratoria": 16,
+      "saturacion_oxigeno": 99.0,
+      "temperatura": 36.5,
+      "nivel_dolor": 6,
+      "duracion_sintomas": "esta manana",
+      "metodo_llegada": "autonomo"
+    },
+    "review_changes": []
+  },
+  {
+    "case_id": "caso_3",
+    "vector_final_review": {
+      "edad": 28,
+      "sexo": "F",
+      "sintomas_presentes": [
+        "conjunctivitis"
+      ],
+      "patologias_previas": [],
+      "medicacion_habitual": [],
+      "presion_sistolica": 116,
+      "presion_diastolica": 72,
+      "frecuencia_cardiaca": 74,
+      "frecuencia_respiratoria": 16,
+      "saturacion_oxigeno": 99.0,
+      "temperatura": 36.4,
+      "nivel_dolor": 1,
+      "duracion_sintomas": "2 dias",
+      "metodo_llegada": "autonomo"
+    },
+    "review_changes": []
+  }
+]

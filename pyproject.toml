@@ -5,34 +5,46 @@ description = "Sistema híbrido LLM + ML para triaje de urgencias médicas"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    # ML Core
+    # ML produccion
     "scikit-learn>=1.5.0",
-    "xgboost>=2.1.0",
     "lightgbm>=4.5.0",
-    "catboost>=1.2.0",
-    # Data
+    # Datos
     "pandas>=2.2.0",
-    "numpy>=1.26.0",
+    "numpy>=2.0.0",
     "pyarrow>=16.0.0",
+    "joblib>=1.4.0",
     # LLM / Ollama
     "ollama>=0.3.0",
     "pydantic>=2.8.0",
     # Explicabilidad
     "shap>=0.46.0",
     # Frontend
-    "streamlit>=1.37.0",
+    "streamlit>=1.58.0",
     "streamlit-shap>=0.1.0",
     "plotly>=5.23.0",
-    # Utilidades
+    # Configuracion runtime
     "python-dotenv>=1.0.0",
     "loguru>=0.7.0",
-    "joblib>=1.4.0",
+]
+
+[dependency-groups]
+dev = [
+    # Benchmarking de modelos (no en produccion)
+    "xgboost>=2.1.0",
+    "catboost>=1.2.0",
+    # Mejoras experimentales (07_mejoras.ipynb)
+    "imbalanced-learn>=0.12.0",
+    # Tuning de hiperparametros
     "optuna>=3.6.0",
-    # Calidad de código
+    # Visualizacion en notebooks
+    "seaborn>=0.13.2",
+    # Notebooks
+    "notebook>=7.0.0",
+    # Calidad de codigo
     "ruff>=0.5.0",
+    # Tests
     "pytest>=8.3.0",
     "pytest-cov>=5.0.0",
-    "seaborn>=0.13.2",
 ]
 
 [build-system]

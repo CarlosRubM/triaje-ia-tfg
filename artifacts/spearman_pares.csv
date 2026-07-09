@@ -1,0 +1,9 @@
+feature_a,feature_b,rho,capa
+llegada_autonoma,llegada_ambulancia,-0.927,AUTO  (>0.85)
+med_benzodiacepina,alto_riesgo_delirium,0.882,AUTO  (>0.85)
+n_medicamentos,polifarmacia,0.874,AUTO  (>0.85)
+med_anticoagulante,alto_riesgo_sangrado,0.857,AUTO  (>0.85)
+age,anciano,0.803,MANUAL (0.70-0.85)
+n_medicamentos,sin_medicacion,-0.777,MANUAL (0.70-0.85)
+n_medicamentos,hiperpolifarmacia,0.772,MANUAL (0.70-0.85)
+shock_index_alto,vitales_criticos,0.761,MANUAL (0.70-0.85)
