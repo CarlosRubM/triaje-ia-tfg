@@ -151,7 +151,6 @@ FEATURE_DISPLAY_MAP = {
 
 
 CC_FEATURE_MAP = {
-    "chest_pain": "dolor torácico",
     "disnea": "disnea",
     "gi_agudo": "cuadro digestivo agudo",
     "neuro_ams": "alteración del nivel de conciencia",

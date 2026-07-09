@@ -8,7 +8,7 @@ from triaje_ia.ui.shap_presenter import (
 
 def test_clean_feature_name_usa_nombres_clinicos():
     assert clean_feature_name("resprate") == "Frecuencia respiratoria"
-    assert clean_feature_name("cc_chest_pain") == "Motivo: dolor torácico"
+    assert clean_feature_name("cc_dolor_toracico") == "Motivo: dolor torácico"
     assert clean_feature_name("bert_svd_04") == "Contexto clínico del relato (04)"
     assert clean_feature_name("temperature_missing") == "Temperatura no registrada"
     assert clean_feature_name("unknown_feature") == "Factor clínico del modelo"

@@ -23,7 +23,7 @@ def test_join_review_terms_display_formatea_en_espanol():
 
 
 def test_display_feature_name_evita_ingles_crudo_en_shap():
-    assert display_feature_name("cc_chest_pain") == "Motivo: dolor torácico"
+    assert display_feature_name("cc_dolor_toracico") == "Motivo: dolor torácico"
     assert display_feature_name("bert_svd_04") == "Contexto clínico del relato (04)"
     assert display_feature_name("temperature_missing") == "Temperatura no registrada"
     assert display_feature_name("unknown_feature") == "Factor clínico del modelo"

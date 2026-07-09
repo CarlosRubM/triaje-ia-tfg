@@ -341,7 +341,7 @@ def cargar_dataset_base(forzar: bool = False) -> pd.DataFrame:
     cache = DATA_INTERIM / "dataset_base.parquet"
 
     if cache.exists() and not forzar:
-        # AVISO: si cambiaste parámetros del pipeline-> Usar forzar=True para regenerar.
+        # AVISO: si cambiaste parámetros del pipeline, usar forzar=True para regenerar.
         logger.warning(
             f"Cargando desde caché: {cache}. "
             "Si cambiaste parámetros del pipeline, usa forzar=True."

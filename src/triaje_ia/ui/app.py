@@ -11,10 +11,6 @@ import time
 import uuid
 import streamlit as st
 import streamlit.components.v1 as components
-from pathlib import Path
-import sys
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from triaje_ia.llm.validator import validar_vector_clinico, NivelAlerta
 from triaje_ia.ui.clinical_form import (
@@ -760,8 +756,6 @@ if "ultima_explicacion_shap" not in st.session_state:
     st.session_state.ultima_explicacion_shap = None
 if "ultimo_umbral_alerta_a1" not in st.session_state:
     st.session_state.ultimo_umbral_alerta_a1 = 0.40
-if "ultima_metrica_tiempos" not in st.session_state:
-    st.session_state.ultima_metrica_tiempos = {}
 if "vector_revisado_pendiente" not in st.session_state:
     st.session_state.vector_revisado_pendiente = None
 if "datos_formulario" not in st.session_state:
@@ -1529,7 +1523,7 @@ def _reset_estado():
     keys_to_clear = [
         "fase", "ultimo_vector", "ultima_narrativa",
         "ultimo_resultado_ml", "ultima_explicacion_shap",
-        "ultimo_umbral_alerta_a1", "ultima_metrica_tiempos",
+        "ultimo_umbral_alerta_a1",
         "datos_formulario", "vector_revisado_pendiente",
         "review_transition_token", "result_reveal_pending",
         "result_transition_token",
@@ -1755,53 +1749,7 @@ def _render_processing_areas_html(current_step):
     )
 
 
-def _render_processing_screen(step_index, progress_pct, elapsed_s=0.0, *, leaving=False):
-    step = PASOS_PROCESAMIENTO[step_index]
-    progress_value = max(0, min(100, round(progress_pct * 100)))
-    screen_class = "processing-screen is-leaving" if leaving else "processing-screen"
-    return (
-        f'<div class="{screen_class}"><div class="processing-card">'
-        '<div class="processing-title">Preparando revisión clínica</div>'
-        '<div class="processing-subtitle">Preparando los datos para su revisión antes de calcular el nivel de prioridad.</div>'
-        '<div class="processing-active-copy">'
-        f'<strong>{html.escape(step["label"])}</strong><br>{html.escape(step["help"])}</div>'
-        f'<div class="processing-areas">{_render_processing_areas_html(step_index)}</div>'
-        f'<div class="processing-steps">{_render_processing_steps_html(step_index)}</div>'
-        '<div class="processing-progress-row">'
-        f'<div class="processing-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{progress_value}">'
-        f'<div class="processing-progress-fill" style="width:{progress_value}%"></div></div></div>'
-        '<p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:0.8rem; line-height:1.5;">Esto tomará unos instantes.</p>'
-        '</div></div>'
-    )
-
-
-PASOS_RESULTADO = [
-    {"label": "Confirmando datos revisados", "help": "Comprobando que los datos editados son válidos.", "area": "Revisión"},
-    {"label": "Calculando nivel de prioridad", "help": "Preparando el nivel sugerido y la alerta de seguridad.", "area": "Prioridad"},
-    {"label": "Preparando probabilidades", "help": "Ordenando la distribución por niveles ESI.", "area": "Probabilidades"},
-    {"label": "Generando factores explicativos", "help": "Preparando los factores que influyen en el resultado.", "area": "Factores"},
-    {"label": "Componiendo resumen final", "help": "Montando la pantalla final para mostrarla completa.", "area": "Resultado"},
-]
 PROGRESO_RESULTADO = [0.12, 0.34, 0.58, 0.82, 1.0]
-AREAS_RESULTADO = ["Revisión", "Prioridad", "Probabilidades", "Factores", "Resultado"]
-
-
-def _render_result_steps_html(current_step):
-    return "".join(
-        f'<div class="processing-step {"done" if i < current_step else "active" if i == current_step else "pending"}">'
-        f'<span class="step-icon">{_ICON_DONE if i < current_step else _ICON_ACTIVE if i == current_step else _ICON_PENDING}</span>'
-        f'<span>{html.escape(paso["label"])}</span></div>'
-        for i, paso in enumerate(PASOS_RESULTADO)
-    )
-
-
-def _render_result_areas_html(current_step):
-    active_area = PASOS_RESULTADO[current_step]["area"]
-    completed_areas = {p["area"] for p in PASOS_RESULTADO[:current_step] if p["area"] != active_area}
-    return "".join(
-        f'<div class="processing-area {"done" if area in completed_areas else "active" if area == active_area else ""}">{html.escape(area)}</div>'
-        for area in AREAS_RESULTADO
-    )
 
 
 def _render_result_preparation_screen(step_index, progress_pct, *, leaving=False):
@@ -1929,7 +1877,6 @@ def _render_fase_2(transition_slot):
             elapsed = time.monotonic() - start_time
             _update_display(5, PROGRESO_PROCESAMIENTO[5], elapsed, force=True)
             st.session_state.ultimo_vector = vector
-            st.session_state.ultima_metrica_tiempos = {**st.session_state.get("ultima_metrica_tiempos", {}), "extraccion_llm_s": elapsed}
             st.session_state.ultimo_resultado_ml = None
             st.session_state.ultima_explicacion_shap = None
             st.session_state.vector_revisado_pendiente = None
@@ -2111,30 +2058,22 @@ def _render_fase_resultado_preparacion(transition_slot):
         container.markdown(_render_result_preparation_screen(step_index, PROGRESO_RESULTADO[step_index]), unsafe_allow_html=True)
 
     total_start = time.monotonic()
-    metricas = dict(st.session_state.get("ultima_metrica_tiempos", {}))
 
     try:
         _update_display(0)
 
         _update_display(1)
-        pred_start = time.monotonic()
         predictor = _cargar_predictor()
         result = predictor.predict(vector_revisado, narrativa)
-        metricas["prediccion_s"] = time.monotonic() - pred_start
         st.session_state.ultimo_umbral_alerta_a1 = getattr(predictor, "_warning_threshold_a1", 0.40)
 
         _update_display(2)
 
         _update_display(3)
-        shap_start = time.monotonic()
         explicacion = _preparar_explicacion_resultado(predictor, result, result.clase_predicha)
-        metricas["shap_s"] = time.monotonic() - shap_start
 
         _update_display(4)
         completed_state_start = time.monotonic()
-        metricas["preparacion_resultado_s"] = time.monotonic() - total_start
-        if "extraccion_llm_s" in metricas:
-            metricas["total_hasta_resultado_s"] = metricas["extraccion_llm_s"] + metricas["preparacion_resultado_s"]
 
         visual_remaining = max(
             0.80 - (time.monotonic() - total_start),
@@ -2157,7 +2096,6 @@ def _render_fase_resultado_preparacion(transition_slot):
         st.session_state.ultimo_vector = vector_revisado
         st.session_state.ultimo_resultado_ml = result
         st.session_state.ultima_explicacion_shap = explicacion
-        st.session_state.ultima_metrica_tiempos = metricas
         st.session_state.vector_revisado_pendiente = None
         st.session_state.result_reveal_pending = True
         st.session_state.fase = 3

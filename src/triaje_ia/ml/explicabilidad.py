@@ -54,11 +54,6 @@ class ExplicacionSHAP:
     top_positivas: list[FeatureContribucion] = field(default_factory=list)
     top_negativas: list[FeatureContribucion] = field(default_factory=list)
 
-    @property
-    def shap_values_todas_clases(self) -> np.ndarray | None:
-        """Shape (n_features, n_clases) si se almacenó el array completo."""
-        return getattr(self, "_shap_all", None)
-
     def to_dict(self) -> dict:
         """Serialización para logging / API."""
         return {
@@ -210,53 +205,3 @@ def explicar_prediccion(
         f"top- {[f.nombre for f in top_neg[:3]]}"
     )
     return resultado
-
-
-def generar_shap_explanation_object(
-    explainer: shap.TreeExplainer,
-    X: pd.DataFrame,
-    clase: int,
-) -> shap.Explanation:
-    """
-    Genera un objeto shap.Explanation compatible con shap.plots.waterfall()
-    y streamlit-shap.
-
-    Útil para renderizar directamente con:
-        st_shap(shap.plots.waterfall(explanation))
-
-    Args:
-        explainer: TreeExplainer.
-        X: DataFrame de 1 fila.
-        clase: acuity 1-5.
-
-    Returns:
-        shap.Explanation para una sola observación y clase.
-    """
-    X_shap = X
-
-    sv_raw = explainer.shap_values(X_shap)
-
-    if isinstance(sv_raw, list):
-        idx = clase - 1
-        values = sv_raw[idx][0]
-    elif isinstance(sv_raw, np.ndarray) and sv_raw.ndim == 3:
-        idx = clase - 1
-        values = sv_raw[0, :, idx]
-    else:
-        values = sv_raw[0]
-
-    bv = explainer.expected_value
-    if isinstance(bv, (list, np.ndarray)):
-        base_value = float(bv[clase - 1])
-    else:
-        base_value = float(bv)
-
-    feature_names = list(X_shap.columns) if hasattr(X_shap, 'columns') else list(X.columns)
-    feature_values = X_shap.iloc[0].values if hasattr(X_shap, 'iloc') else X.iloc[0].values
-
-    return shap.Explanation(
-        values=values,
-        base_values=base_value,
-        data=feature_values,
-        feature_names=feature_names,
-    )

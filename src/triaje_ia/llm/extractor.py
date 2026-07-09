@@ -39,8 +39,8 @@ _PATRON_GLUCEMIA = re.compile(
 )
 _PATRON_ESTADO_MENTAL_GUIADO = re.compile(
     r"\b(somnolient[ao]|bajo nivel de conciencia|"
-    r"alteraci[oÃ³]n del nivel de consciencia|"
-    r"alteraci[oÃ³]n del nivel de conciencia)\b",
+r"alteraci[oó]n del nivel de consciencia|"
+    r"alteraci[oó]n del nivel de conciencia)\b",
     re.IGNORECASE,
 )
 _PATRONES_SINTOMAS_EXPLICITOS = [

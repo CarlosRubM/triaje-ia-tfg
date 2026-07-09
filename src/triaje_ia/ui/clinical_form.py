@@ -201,7 +201,7 @@ def validar_entrada_triaje(data: TriageFormData) -> list[str]:
     if not data.sexo:
         avisos.append("Sexo no registrado.")
     if not _clean_text(data.motivo_consulta):
-        avisos.append("Falta motivo principal o sintoma guia.")
+        avisos.append("Falta motivo principal o síntoma guía.")
 
     ta_incompleta = (
         data.presion_sistolica is None
@@ -222,7 +222,7 @@ def validar_entrada_triaje(data: TriageFormData) -> list[str]:
     ]
     if sum(vitales_registradas) <= 1:
         avisos.append(
-            "Constantes no registradas o muy incompletas; el analisis no se bloquea."
+            "Constantes no registradas o muy incompletas; el análisis no se bloquea."
         )
 
     return avisos

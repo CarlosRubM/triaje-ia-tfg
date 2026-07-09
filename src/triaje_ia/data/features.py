@@ -104,7 +104,7 @@ CCS_MACROFLAGS: dict[str, list[int]] = {
     "hx_trauma_muscular":  [204, 205, 228, 229, 230, 231, 232, 233, 235, 236, 238, 239, 244],
 }
 
-# Lista definitiva de features para 04_models.ipynb
+# Lista definitiva de features del modelo final
 FEATURES_CONTINUAS: list[str] = [
     "pain", "o2sat", "resprate", "heartrate", "dbp", "sbp",
     "qsofa", "news2", "n_vitales_anomalos", "pulse_pressure",
